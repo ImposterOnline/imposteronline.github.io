@@ -345,13 +345,18 @@
             width: 100%;
             height: 100%; /* Fill the 1:1 space */
         }
-
+        
+        /* ▼▼▼ FIX ▼▼▼ */
+        /* Make library video fill the container */
         #library-modal-player-container video {
              border-radius: 0; /* No radius inside modal */
-             /* FIX: Prevents the grey background flash on mobile before video loads.
-             */
              background-color: #000;
+             /* Make the video cover the entire 1:1 area */
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
         }
+        /* ▲▲▲ END FIX ▲▲▲ */
         
         /* Library Grid */
         #library-grid {
@@ -770,10 +775,7 @@
                 modeLockButton.addEventListener('click', () => setRecordingMode('lock'));
                 recordButton.addEventListener('pointerdown', handleRecordPointerDown);
                 recordButton.addEventListener('pointerup', handleRecordPointerUp);
-                // ▼▼▼ FIX ▼▼▼
-                // Pause recording if the user's finger slides off the button.
                 recordButton.addEventListener('pointerleave', handleRecordPointerUp);
-                // ▲▲▲ END FIX ▲▲▲
                 recordButton.addEventListener('click', handleRecordClick);
                 
                 nextButton.addEventListener('click', finishRecording);
@@ -878,8 +880,6 @@
                 }
             }
             
-            // ▼▼▼ FIX ▼▼▼
-            // Checks for multiple cameras and only shows the flip button if supported.
             async function updateFlipCameraButtonVisibility() {
                 if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
                     try {
@@ -898,7 +898,6 @@
                     flipCameraButton.classList.add('hidden'); // Hide if API not supported
                 }
             }
-            // ▲▲▲ END FIX ▲▲▲
 
             async function startCamera(preserveProgress = false) {
                 stopCurrentStream();
@@ -913,15 +912,15 @@
                     previewVideo.srcObject = stream;
                     previewVideo.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
                     
-                    // ▼▼▼ FIX ▼▼▼
-                    // Check for camera support and show/hide flip button.
                     await updateFlipCameraButtonVisibility();
-                    // ▲▲▲ END FIX ▲▲▲
 
                     if (!preserveProgress) {
                         resetRecordingProgress();
                     }
+                    // ▼▼▼ FIX ▼▼▼
+                    // Always re-initialize the recorder when the stream changes.
                     initializeMediaRecorder();
+                    // ▲▲▲ END FIX ▲▲▲
                     showView('recording');
                 } catch (err) {
                      throw err;
@@ -930,6 +929,7 @@
             
 			async function flipCamera() {
 				if (isRecording) {
+                    // Pause the current recording before switching cameras
                     if (recordingMode === 'hold') {
 					    pauseRecording();
                     } else {
@@ -937,18 +937,24 @@
                     }
 				}
 
+                // Discard the old MediaRecorder instance. A new one will be created in startCamera.
                 if (mediaRecorder) {
                     mediaRecorder.onstop = null;
+                    mediaRecorder.ondataavailable = null;
+                    mediaRecorder.onerror = null;
+                    mediaRecorder = null;
                 }
 
 				facingMode = (facingMode === 'user') ? 'environment' : 'user';
 				try {
                     flipCameraButton.disabled = true;
                     recordButton.disabled = true;
-
+                    
+                    // Restart camera with the new facing mode, preserving existing recorded chunks.
 					await startCamera(true); 
 				} catch (err) {
 					showToast("Could not switch camera.");
+					// Revert facing mode on error
 					facingMode = (facingMode === 'user') ? 'environment' : 'user';
 				} finally {
                     flipCameraButton.disabled = false;
@@ -973,6 +979,11 @@
             }
 
             function initializeMediaRecorder() {
+                if (!stream) {
+                    console.error("Cannot initialize MediaRecorder: stream is not available.");
+                    return;
+                }
+                
                 const options = [
                     'video/mp4; codecs=avc1,mp4a.40.2',
                     'video/webm; codecs=vp9,opus',
