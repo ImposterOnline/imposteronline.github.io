@@ -21,6 +21,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Shorties - 6 Second Video</title>
     
+    <link rel="icon" type="image/png" href="https://i.ibb.co/93dkgst4/video-video-call-camera-record-svgrepo-com.png">
+
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -124,7 +126,10 @@
             height: 100%;
             object-fit: cover; /* Fill the square, cropping as needed */
             cursor: pointer; /* Add pointer cursor to indicate it's clickable */
-            /* FIX: Prevents the grey background flash on mobile before video loads. */
+            /* FIX: Prevents the grey background flash on mobile before video loads.
+              This sets a black background, which is less jarring than the
+              browser default (a grey box with a play icon).
+            */
             background-color: #000;
         }
         
@@ -315,14 +320,14 @@
         .big-play-button i.fa-play {
             font-size: 40px;
             color: white;
-            /* Nudge icon left for better visual centering */
-            margin-left: 5px; 
+            /* Nudge icon for better visual centering */
+            margin-left: 4px; 
         }
         
         /* Center play icon in smaller button */
         .play-pause-btn i.fa-play {
-             /* Nudge icon right for better visual centering */
-            margin-left: 3px;
+             /* Nudge icon for better visual centering */
+            margin-left: 2px;
         }
 
         /* --- Modal Styles --- */
@@ -355,7 +360,8 @@
 
         #library-modal-player-container video {
              border-radius: 0; /* No radius inside modal */
-             /* FIX: Prevents the grey background flash on mobile before video loads. */
+             /* FIX: Prevents the grey background flash on mobile before video loads.
+             */
              background-color: #000;
         }
         
@@ -797,6 +803,7 @@
             let totalRecordedTime = 0; // in milliseconds
             let chunkStartTime = 0;
             let recordingInterval;
+            let countdownInterval = null; // NEW: For swipe-lock countdown
             const MAX_DURATION = 6000; // 6 seconds
             let facingMode = 'user'; // 'user' (front) or 'environment' (back)
             let currentView = '';
@@ -968,15 +975,27 @@
             }
             
 			async function flipCamera() {
+                // Pause recording if it's active
 				if (mediaRecorder && mediaRecorder.state === 'recording') {
 					pauseRecording();
 				}
 
+                // FIX: Detach the onstop event handler from the *old*
+                // mediaRecorder instance *before* we stop its stream.
+                // This prevents it from firing and navigating to the preview screen.
+                if (mediaRecorder) {
+                    mediaRecorder.onstop = null;
+                }
+
 				facingMode = (facingMode === 'user') ? 'environment' : 'user';
 				try {
+                    // startCamera(true) will stop the old stream (triggering nothing)
+                    // and create a new MediaRecorder, which will have its
+                    // onstop handler set correctly by initializeMediaRecorder().
 					await startCamera(true); 
 				} catch (err) {
 					showToast("Could not switch camera.");
+                    // Restore facing mode if it failed
 					facingMode = (facingMode === 'user') ? 'environment' : 'user';
 				}
 			}
@@ -989,7 +1008,12 @@
                 updateProgressUI();
                 nextButton.disabled = true;
                 recordButton.classList.remove('is-recording', 'is-paused');
+                
                 clearInterval(recordingInterval);
+                // NEW: Clear countdown interval
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+
                 console.log("Recording progress has been reset.");
             }
 
@@ -1038,22 +1062,28 @@
             // --- NEW: Swipe-to-lock recording logic ---
             function handlePointerDown(e) {
                 if (isRecordingLocked) {
-                    // If locked, a single tap stops the recording.
+                    // If locked, a single tap stops the recording OR the countdown.
+                    isRecordingLocked = false; // Mark as unlocked
                     pauseRecording();
-                    finishRecording();
+                    finishRecording(); // This will clear intervals and reset UI
                     return;
                 }
 
                 initialPointerY = e.clientY;
                 window.addEventListener('pointermove', handlePointerMove);
                 window.addEventListener('pointerup', handlePointerUp);
-                recordButton.addEventListener('pointerleave', handlePointerUp);
-
+                // FIX: Removed 'pointerleave' listener from the button
+                // This 'pointerleave' listener would fire on mobile when
+                // dragging up, prematurely triggering handlePointerUp
+                // and stopping the recording before the swipe was detected.
+                // window.addEventListener('pointerup', ...) is sufficient.
+                
                 startRecording();
                 recordInstructions.textContent = 'Swipe up to lock';
             }
 
             function handlePointerMove(e) {
+                if (isRecordingLocked) return; // Already locked, do nothing
                 const deltaY = e.clientY - initialPointerY;
                 if (deltaY < SWIPE_LOCK_THRESHOLD) {
                     lockRecording();
@@ -1063,7 +1093,7 @@
             function handlePointerUp() {
                 window.removeEventListener('pointermove', handlePointerMove);
                 window.removeEventListener('pointerup', handlePointerUp);
-                recordButton.removeEventListener('pointerleave', handlePointerUp);
+                // recordButton.removeEventListener('pointerleave', handlePointerUp); // Already removed
 
                 if (!isRecordingLocked) {
                     pauseRecording();
@@ -1077,20 +1107,48 @@
             function lockRecording() {
                 isRecordingLocked = true;
                 
+                // Clean up listeners so lifting finger does nothing
+                window.removeEventListener('pointermove', handlePointerMove);
+                window.removeEventListener('pointerup', handlePointerUp);
+
                 // Show visual indicator
                 swipeLockIndicator.classList.remove('hidden');
-                setTimeout(() => swipeLockIndicator.style.opacity = '1', 10); // Fade in
+                setTimeout(() => swipeLockIndicator.style.opacity = '1', 10);
 
                 // Change button to a stop button
                 recordButtonIcon.classList.remove('fa-video');
                 recordButtonIcon.classList.add('fa-stop');
                 recordButton.style.borderRadius = '25%'; // Make it a squircle
                 recordInstructions.textContent = 'Tap to stop';
-
-                // Clean up listeners so lifting finger does nothing
-                window.removeEventListener('pointermove', handlePointerMove);
-                window.removeEventListener('pointerup', handlePointerUp);
-                recordButton.removeEventListener('pointerleave', handlePointerUp);
+                
+                // --- NEW COUNTDOWN LOGIC ---
+                // Pause the recording that started on 'pointerdown'
+                pauseRecording();
+                
+                let countdown = 5;
+                timerText.textContent = `${countdown}`; // Show '5'
+                
+                clearInterval(countdownInterval); // Clear any existing one
+                countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        timerText.textContent = `${countdown}`;
+                    } else {
+                        clearInterval(countdownInterval);
+                        countdownInterval = null;
+                        
+                        // Check if user cancelled by tapping stop *during* the countdown
+                        // handlePointerDown would have set isRecordingLocked to false
+                        if (!isRecordingLocked) {
+                            updateProgressUI(); // Reset timer text to 0.0s
+                            return; 
+                        }
+                        
+                        // Start recording
+                        timerText.textContent = '0.0s'; // Reset for recording
+                        startRecording();
+                    }
+                }, 1000);
             }
 
             function updateUIAfterRecordingStop() {
@@ -1158,6 +1216,10 @@
 
             function finishRecording() {
                 clearInterval(recordingInterval);
+                // NEW: Clear countdown interval
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+
                 recordButton.classList.remove('is-recording', 'is-paused');
                 nextButton.disabled = true;
 
