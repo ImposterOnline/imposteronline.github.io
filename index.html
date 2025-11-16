@@ -469,14 +469,17 @@
                 
                 <div id="recording-controls" class="flex flex-col items-center gap-4 mt-6">
                     <div class="relative w-24 h-24">
+                        <!-- NEW: Updated SVG for segmented progress -->
                         <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <!-- The grey background ring -->
                             <circle class="text-gray-200 progress-ring__circle_bg" stroke-width="8" stroke="currentColor" fill="transparent" r="46" cx="50" cy="50" />
-                            <circle class="progress-ring__circle"
-                                stroke-width="8"
-                                stroke-dasharray="289.0265"
-                                stroke-dashoffset="289.0265"
-                                fill="transparent"
-                                r="46" cx="50" cy="50" />
+                            
+                            <!-- Container for completed segments -->
+                            <g id="progress-segments" transform="rotate(-90 50 50)"></g>
+                            
+                            <!-- The currently recording segment -->
+                            <!-- REMOVED: This element is no longer needed. We will create segments dynamically. -->
+                            <!-- <circle id="active-progress-circle" ... /> -->
                         </svg>
                         <div id="timer-text" class="absolute top-0 left-0 w-full h-full flex items-center justify-center text-2xl font-semibold">
                             0.0s
@@ -500,8 +503,9 @@
                     </div>
 
                     <div class="flex items-center justify-between gap-4 w-full mt-4">
-                        <button id="reset-button" class="w-16 h-16 bg-gray-200 rounded-full shadow-lg hover:bg-gray-300 transition-all flex items-center justify-center text-xl text-red-500">
-                            <i class="fas fa-trash-alt"></i>
+                        <!-- NEW: Replaced Reset Button with Undo Button -->
+                        <button id="undo-button" class="w-16 h-16 bg-gray-200 rounded-full shadow-lg hover:bg-gray-300 transition-all flex items-center justify-center text-xl text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-undo"></i>
                         </button>
 
                         <button id="flip-camera-button" class="w-16 h-16 bg-gray-200 rounded-full shadow-lg hover:bg-gray-300 transition-all flex items-center justify-center text-xl disabled:opacity-50 hidden">
@@ -571,6 +575,7 @@
                     <i class="fas fa-folder-open text-6xl text-gray-400 mb-4"></i>
                     <h3 class="text-xl font-semibold">Library is Empty</h3>
                     <p class="text-gray-600 mt-2">Record a video and tap "Save to Device" to add it to your library.</p>
+
                 </div>
             </div>
             
@@ -671,9 +676,12 @@
             
             const nextButton = document.getElementById('next-button');
             const flipCameraButton = document.getElementById('flip-camera-button');
-            const resetButton = document.getElementById('reset-button');
+            const undoButton = document.getElementById('undo-button'); // NEW
             const timerText = document.getElementById('timer-text');
-            const progressCircle = document.querySelector('.progress-ring__circle');
+            
+            // NEW: Progress Bar Elements
+            const progressSegments = document.getElementById('progress-segments');
+            const activeProgressCircle = document.getElementById('active-progress-circle');
             
             // Preview Screen Elements
             const videoContainer = document.getElementById('video-container');
@@ -718,7 +726,9 @@
             // --- State Variables ---
             let mediaRecorder;
             let stream;
-            let recordedChunks = [];
+            let recordedChunks = []; // This will be the flattened array for the final blob
+            let chunkGroups = []; // NEW: Array of arrays, each holding chunks for one segment
+            let chunkDurations = []; // NEW: Array of durations (ms) for each segment
             let recordedBlob;
             let totalRecordedTime = 0; // in milliseconds
             let chunkStartTime = 0;
@@ -730,16 +740,18 @@
             let libraryModalBlob = null;
             let recordingMode = 'hold';
             let isRecording = false;
+            let currentSegmentElement = null; // NEW: Store the segment we are actively drawing
 
             // --- Constants ---
             const circumference = 2 * Math.PI * 46; // 2 * pi * r
             const DB_NAME = 'ShortiesDB';
             const DB_VERSION = 1;
             const STORE_NAME = 'videos';
+            // NEW: Colors for segments
+            const colors = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af'];
 
             // --- Initialization ---
             async function init() {
-                progressCircle.style.strokeDashoffset = circumference;
                 updateThemeIcon();
                 
                 setupEventListeners();
@@ -761,7 +773,9 @@
                 themeToggleButton.addEventListener('click', toggleTheme);
                 getCameraButton.addEventListener('click', requestCameraAndStart);
                 flipCameraButton.addEventListener('click', flipCamera);
-                resetButton.addEventListener('click', resetRecordingProgress);
+                
+                // NEW: Undo button listener
+                undoButton.addEventListener('click', undoLastChunk);
                 
                 modeHoldButton.addEventListener('click', () => setRecordingMode('hold'));
                 modeLockButton.addEventListener('click', () => setRecordingMode('lock'));
@@ -773,8 +787,8 @@
                 nextButton.addEventListener('click', finishRecording);
                 downloadVideoButton.addEventListener('click', downloadAndSaveToLibrary);
                 recordAnotherButton.addEventListener('click', () => {
-                    resetRecordingProgress();
-                    requestCameraAndStart();
+                    showView('recording');
+                    startCamera(false); // Pass false to trigger reset
                 });
                 libraryBackButton.addEventListener('click', () => {
                     checkPermissionsAndStart();
@@ -908,16 +922,11 @@
                 }
             }
             
-            // ▼▼▼ FIX ▼▼▼
-            // Correctly handles the state of the MediaRecorder during a camera flip
-            // to prevent premature finalization of the video.
 			async function flipCamera() {
 				if (isRecording) {
                     pauseRecording();
 				}
 
-                // Detach the old recorder's onstop event. This is critical.
-                // It prevents the recorder from finalizing the video when its stream is killed by startCamera().
                 if (mediaRecorder) {
                     mediaRecorder.onstop = null;
                 }
@@ -928,32 +937,47 @@
 				facingMode = (facingMode === 'user') ? 'environment' : 'user';
                 
 				try {
-                    // Restart the camera. This function will stop the old stream and create a new MediaRecorder.
-                    // The `recordedChunks` array is preserved because we pass `true`.
-					await startCamera(true); 
+					await startCamera(false); // Flipping camera always resets progress
 				} catch (err) {
 					showToast("Could not switch camera.");
-					// Revert facing mode on error to keep the state consistent.
 					facingMode = (facingMode === 'user') ? 'environment' : 'user';
 				} finally {
                     flipCameraButton.disabled = false;
                     recordButton.disabled = false;
                 }
 			}
-            // ▲▲▲ END FIX ▲▲▲
 
+            // NEW: Updated Reset Function
             function resetRecordingProgress() {
-                recordedChunks = [];
+                clearInterval(recordingInterval);
+
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.onstop = null; 
+                    mediaRecorder.stop();
+                }
+
+                chunkGroups = [];
+                chunkDurations = [];
+                recordedBlob = null; 
                 totalRecordedTime = 0;
                 isRecording = false;
                 
-                updateProgressUI();
+                // Update UI to its initial state
+                updateTimerText(0);
+                progressSegments.innerHTML = '';
+                currentSegmentElement = null; // NEW
+                // updateActiveCircle(0, 0); // REMOVED
+                
                 nextButton.disabled = true;
+                undoButton.disabled = true; // Disable undo
                 recordButton.classList.remove('is-recording', 'is-paused');
                 recordButtonIcon.classList.remove('fa-stop');
                 recordButtonIcon.classList.add('fa-video');
                 
-                clearInterval(recordingInterval);
+                if (flipCameraButton && !flipCameraButton.classList.contains('hidden')) {
+                    flipCameraButton.disabled = false;
+                }
+                
                 console.log("Recording progress has been reset.");
             }
 
@@ -971,10 +995,16 @@
                     mediaRecorder = new MediaRecorder(stream, { mimeType: options });
                 
                     mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) recordedChunks.push(event.data);
+                        if (event.data.size > 0 && chunkGroups.length > 0) {
+                            // NEW: Add data to the last (current) group
+                            chunkGroups[chunkGroups.length - 1].push(event.data);
+                        }
                     };
                     
                     mediaRecorder.onstop = () => {
+                        // NEW: Flatten the groups into the final chunks array
+                        recordedChunks = chunkGroups.flat();
+                        
                         if (recordedChunks.length === 0) return;
 
                         const mimeType = recordedChunks[0].type || mediaRecorder.mimeType || 'video/mp4';
@@ -1046,12 +1076,43 @@
                 if (!mediaRecorder || totalRecordedTime >= MAX_DURATION || isRecording) return;
                 
                 isRecording = true;
+                if (flipCameraButton) {
+                    flipCameraButton.disabled = true;
+                }
+                
+                // NEW: Start a new chunk group
+                chunkGroups.push([]);
+                
                 if (mediaRecorder.state === 'inactive') mediaRecorder.start(100);
                 else if (mediaRecorder.state === 'paused') mediaRecorder.resume();
+
+                // --- NEW PROGRESS BAR LOGIC ---
+                // 1. Calculate offset and color for the new segment
+                const startOffsetProgress = totalRecordedTime / MAX_DURATION;
+                const startOffset = startOffsetProgress * circumference;
+                const color = colors[chunkDurations.length % colors.length];
+
+                // 2. Create the new segment element
+                currentSegmentElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                currentSegmentElement.setAttribute('stroke-width', '8');
+                currentSegmentElement.setAttribute('stroke', color);
+                currentSegmentElement.setAttribute('fill', 'transparent');
+                currentSegmentElement.setAttribute('r', '46');
+                currentSegmentElement.setAttribute('cx', '50');
+                currentSegmentElement.setAttribute('cy', '50');
+                // 3. Set its initial state (0 length) and correct offset
+                currentSegmentElement.setAttribute('stroke-dasharray', `0 ${circumference}`);
+                currentSegmentElement.setAttribute('stroke-dashoffset', -startOffset);
+                currentSegmentElement.style.transition = 'stroke-dasharray 0.05s linear'; // Add transition for smooth growth
+                
+                // 4. Add it to the SVG
+                progressSegments.appendChild(currentSegmentElement);
+                // --- END NEW LOGIC ---
                 
                 recordButton.classList.remove('is-paused');
                 recordButton.classList.add('is-recording');
                 nextButton.disabled = true;
+                undoButton.disabled = true; // NEW: Disable undo while recording
                 chunkStartTime = Date.now();
                 
                 clearInterval(recordingInterval);
@@ -1064,16 +1125,80 @@
                 isRecording = false;
                 mediaRecorder.pause();
                 recordButton.classList.remove('is-recording');
-                totalRecordedTime += Date.now() - chunkStartTime;
+                
+                // NEW: Save chunk duration
+                const chunkDuration = Date.now() - chunkStartTime;
+                chunkDurations.push(chunkDuration);
+
+                // --- NEW PROGRESS BAR LOGIC ---
+                // Set the final length of the segment we were just drawing
+                const finalLength = (chunkDuration / MAX_DURATION) * circumference;
+                if (currentSegmentElement) {
+                    currentSegmentElement.setAttribute('stroke-dasharray', `${finalLength} ${circumference}`);
+                }
+                currentSegmentElement = null; // We are no longer drawing this segment
+                // --- END NEW LOGIC ---
+
+                totalRecordedTime += chunkDuration; // Now update total time
+                
                 clearInterval(recordingInterval);
-                updateProgressUI();
                 
                 if (totalRecordedTime > 0) {
                     nextButton.disabled = false;
+                    undoButton.disabled = false; // NEW: Enable undo
                     recordButton.classList.add('is-paused');
+                    if (flipCameraButton) {
+                        flipCameraButton.disabled = true; // Keep disabled
+                    }
+                } else {
+                    if (flipCameraButton && !flipCameraButton.classList.contains('hidden')) {
+                        flipCameraButton.disabled = false;
+                    }
                 }
+                
+                // NEW: Update progress display
+                // updateActiveCircle(0, totalRecordedTime); // REMOVED
+                updateTimerText(totalRecordedTime);
+            }
+            
+            // NEW: Undo last recording segment
+            function undoLastChunk() {
+                if (chunkGroups.length === 0 || isRecording) return;
+
+                // *** FIX: Stop the current (paused) recorder before we orphan it ***
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.onstop = null; // Prevent its onstop from firing by accident
+                    mediaRecorder.stop();
+                }
+
+                chunkGroups.pop();
+                const undoneDuration = chunkDurations.pop();
+                totalRecordedTime -= undoneDuration;
+
+                // NEW: Remove the last <circle> element from the <g>
+                if (progressSegments.lastChild) {
+                    progressSegments.removeChild(progressSegments.lastChild);
+                }
+                currentSegmentElement = null; // Just in case
+
+                // updateActiveCircle(0, totalRecordedTime); // REMOVED
+                updateTimerText(totalRecordedTime);
+
+                if (chunkGroups.length === 0) {
+                    undoButton.disabled = true;
+                    nextButton.disabled = true;
+                    if (flipCameraButton && !flipCameraButton.classList.contains('hidden')) {
+                        flipCameraButton.disabled = false;
+                    }
+                } else {
+                    nextButton.disabled = false; // Still have other chunks
+                }
+                
+                // Re-initialize recorder to clear its internal state and get new handlers
+                initializeMediaRecorder();
             }
 
+            // NEW: Interval function
             function updateProgress() {
                 const currentTimeInChunk = Date.now() - chunkStartTime;
                 const currentTotalTime = totalRecordedTime + currentTimeInChunk;
@@ -1084,18 +1209,42 @@
                     
                     finishRecording();
                 } else {
-                    updateProgressUI(currentTotalTime);
+                    // Update the active circle's length and offset
+                    // updateActiveCircle(currentTimeInChunk, totalRecordedTime); // REMOVED
+
+                    // --- NEW PROGRESS BAR LOGIC ---
+                    // Update the length of the segment we are currently drawing
+                    if (currentSegmentElement) {
+                        const length = (currentTimeInChunk / MAX_DURATION) * circumference;
+                        currentSegmentElement.setAttribute('stroke-dasharray', `${length} ${circumference}`);
+                    }
+                    // --- END NEW LOGIC ---
+
+                    // Update the timer text
+                    updateTimerText(currentTotalTime);
                 }
             }
 
-            function updateProgressUI(time) {
+            // NEW: Update timer text
+            function updateTimerText(time) {
                 const timeToDisplay = time !== undefined ? time : totalRecordedTime;
                 const seconds = (timeToDisplay / 1000).toFixed(1);
-                const progress = Math.min(timeToDisplay / MAX_DURATION, 1);
-                
                 timerText.textContent = `${seconds}s`;
-                progressCircle.style.strokeDashoffset = circumference - (progress * circumference);
             }
+            
+            // NEW: Draw the static, completed segments
+            /* REMOVED: This function is no longer needed.
+                Segments are now added one-by-one in pauseRecording()
+                and removed one-by-one in undoLastChunk().
+            */
+            // function drawCompletedSegments() { ... }
+            
+            // NEW: Update the actively-recording circle
+            /* REMOVED: This function is no longer needed.
+                We update `currentSegmentElement` directly.
+            */
+            // function updateActiveCircle(lengthInMs, offsetInMs) { ... }
+
 
             function finishRecording() {
                 clearInterval(recordingInterval);
@@ -1103,15 +1252,19 @@
                 
                 recordButton.classList.remove('is-recording', 'is-paused');
                 nextButton.disabled = true;
+                undoButton.disabled = true; // Disable undo on preview
                 recordButtonIcon.classList.replace('fa-stop', 'fa-video');
 
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                     mediaRecorder.stop();
-                } else if (recordedChunks.length > 0) {
+                } else if (chunkGroups.flat().length > 0) {
                     // Manually trigger the onstop if recorder is already inactive but we have chunks
                     mediaRecorder.onstop();
                 } else {
                     showToast("Hold the record button to capture video first!");
+                    // Re-enable buttons if no video was recorded
+                    if (totalRecordedTime > 0) undoButton.disabled = false;
+                    nextButton.disabled = (totalRecordedTime === 0);
                 }
                 stopCurrentStream();
             }
