@@ -132,7 +132,6 @@
             transition: stroke-dashoffset 0.1s linear;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
-            stroke: #3b82f6; /* default blue-500 */
         }
         html.dark .progress-ring__circle_bg {
             color: #374151; /* bg-gray-700 */
@@ -542,6 +541,9 @@
                             <!-- Background ring -->
                             <circle class="text-gray-200 progress-ring__circle_bg" stroke-width="8" stroke="currentColor" fill="transparent" r="46" cx="50" cy="50" />
                             
+                            <!-- Completed segments container -->
+                            <g id="progress-segments-container"></g>
+                            
                             <!-- Active recording segment (animated) -->
                             <circle id="active-progress-segment" class="progress-ring__circle" stroke-width="8" fill="transparent" r="46" cx="50" cy="50" stroke-dasharray="0 289" />
                         </svg>
@@ -778,6 +780,7 @@
             const timerText = document.getElementById('timer-text');
             
             // Progress Ring Elements
+            const progressSegmentsContainer = document.getElementById('progress-segments-container');
             const activeProgressSegment = document.getElementById('active-progress-segment'); 
             
             // Preview Screen Elements
@@ -840,9 +843,11 @@
             let libraryModalBlob = null;
             let recordingMode = 'hold';
             let isRecording = false;
+            let segmentDurations = []; // Store durations of each segment
 
             // --- Constants ---
             const circumference = 2 * Math.PI * 46; // 2 * pi * r
+            const blueShades = ["#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"]; // Colors for segments
             
             // Set initial dash array for the full ring (empty)
             activeProgressSegment.setAttribute('stroke-dasharray', `${circumference} ${circumference}`);
@@ -1027,6 +1032,7 @@
                     if (!preserveProgress) {
                         resetRecordingProgress();
                     } else {
+                        // If preserving progress, we still need a fresh recorder instance
                         initializeMediaRecorder();
                     }
                     showView('recording');
@@ -1057,7 +1063,7 @@
 					facingMode = (facingMode === 'user') ? 'environment' : 'user';
 				} finally {
                     // Start camera resets progress and updates button state
-                    // updateFlipCameraButtonVisibility() will be called in startCamera
+                    // updateFlipCameraButtonVisibility() is called in startCamera
                     recordButton.disabled = false;
                 }
 			}
@@ -1079,28 +1085,27 @@
                     mediaRecorder.stop(); 
                 }
 
-                recordedChunks = []; // Clear all chunks
+                recordedChunks = [];
                 recordedBlob = null; 
                 totalRecordedTime = 0;
+                segmentDurations = [];
                 isRecording = false;
                 
                 // Update UI to its initial state
                 updateTimerText(0);
                 
                 // Reset progress ring visual
+                progressSegmentsContainer.innerHTML = ''; // Clear completed segments
                 activeProgressSegment.style.strokeDashoffset = circumference;
                 
                 nextButton.disabled = true;
-                restartButton.disabled = true; // Disable restart button
+                restartButton.disabled = true;
 
                 recordButton.classList.remove('is-recording', 'is-paused');
                 recordButtonIcon.classList.remove('fa-stop');
                 recordButtonIcon.classList.add('fa-video');
                 
-                // Enable flip camera if available
                 updateFlipCameraButtonVisibility();
-                
-                console.log("Recording progress has been reset.");
                 
                 // BUG FIX: Re-initialize the media recorder to allow recording again
                 initializeMediaRecorder();
@@ -1127,8 +1132,6 @@
                     
                     mediaRecorder.onstop = () => {
                         if (recordedChunks.length === 0) {
-                            console.log("No chunks to create blob from.");
-                            // If stopping resulted in no video, just reset and re-init
                             resetRecordingProgress();
                             return;
                         };
@@ -1203,12 +1206,14 @@
                 
                 isRecording = true;
                 flipCameraButton.disabled = true;
-                restartButton.disabled = true; // Disable restart during active recording
+                restartButton.disabled = true;
                 
                 if (mediaRecorder.state === 'inactive') mediaRecorder.start(100);
                 else if (mediaRecorder.state === 'paused') mediaRecorder.resume();
 
-                // Set the starting offset for the active segment
+                // Set color and starting offset for the new active segment
+                activeProgressSegment.style.stroke = blueShades[segmentDurations.length % blueShades.length];
+                activeProgressSegment.style.strokeDashoffset = circumference * (1 - totalRecordedTime / MAX_DURATION);
                 activeProgressSegment.setAttribute('stroke-dasharray', circumference);
 
                 recordButton.classList.remove('is-paused');
@@ -1228,19 +1233,41 @@
                 mediaRecorder.pause();
                 recordButton.classList.remove('is-recording');
                 
-                // Save chunk duration
                 const chunkDuration = Date.now() - chunkStartTime;
-                totalRecordedTime += chunkDuration; // Update total time
+                const oldTotalRecordedTime = totalRecordedTime;
+                totalRecordedTime += chunkDuration;
+                segmentDurations.push(chunkDuration);
                 
                 clearInterval(recordingInterval);
                 
+                // Create and append a finalized circle for the segment just recorded
+                const segmentCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                segmentCircle.setAttribute('class', 'progress-ring__circle');
+                segmentCircle.setAttribute('stroke-width', '8');
+                segmentCircle.setAttribute('fill', 'transparent');
+                segmentCircle.setAttribute('r', '46');
+                segmentCircle.setAttribute('cx', '50');
+                segmentCircle.setAttribute('cy', '50');
+                segmentCircle.style.stroke = blueShades[(segmentDurations.length - 1) % blueShades.length];
+
+                const segmentStartPercent = oldTotalRecordedTime / MAX_DURATION;
+                const segmentPercent = chunkDuration / MAX_DURATION;
+                const dash = segmentPercent * circumference;
+                const gap = (1 - segmentPercent) * circumference;
+                segmentCircle.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+                segmentCircle.setAttribute('stroke-dashoffset', circumference * (1 - segmentStartPercent));
+                progressSegmentsContainer.appendChild(segmentCircle);
+
+                // Hide the active animator segment until next recording starts
+                activeProgressSegment.style.strokeDashoffset = circumference;
+                
                 if (totalRecordedTime > 0) {
                     nextButton.disabled = false;
-                    restartButton.disabled = false; // Enable restart after first segment
+                    restartButton.disabled = false;
                     recordButton.classList.add('is-paused');
-                    flipCameraButton.disabled = true; // Keep flip disabled once recording starts
+                    flipCameraButton.disabled = true;
                 } else {
-                    updateFlipCameraButtonVisibility(); // Re-enable if no segments were recorded (edge case)
+                    updateFlipCameraButtonVisibility();
                 }
                 
                 updateTimerText(totalRecordedTime);
@@ -1259,10 +1286,7 @@
                 } else {
                     // Update progress ring visual
                     const percent = currentTotalTime / MAX_DURATION;
-                    const offset = circumference * (1 - percent);
-                    activeProgressSegment.style.strokeDashoffset = offset;
-
-                    // Update the timer text
+                    activeProgressSegment.style.strokeDashoffset = circumference * (1 - percent);
                     updateTimerText(currentTotalTime);
                 }
             }
@@ -1280,18 +1304,15 @@
                 
                 recordButton.classList.remove('is-recording', 'is-paused');
                 nextButton.disabled = true;
-                restartButton.disabled = true; // Disable on finish
+                restartButton.disabled = true;
                 recordButtonIcon.classList.replace('fa-stop', 'fa-video');
 
-                // Final check to stop the recorder if it's active
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                     mediaRecorder.stop();
                 } else if (recordedChunks.length > 0) {
-                    // Manually trigger the onstop if recorder is already inactive but we have chunks
                     mediaRecorder.onstop();
                 } else {
                     showToast("Hold the record button to capture video first!");
-                    // Re-enable buttons if no video was recorded
                     nextButton.disabled = (totalRecordedTime === 0);
                 }
                 stopCurrentStream();
