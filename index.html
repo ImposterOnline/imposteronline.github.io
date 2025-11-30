@@ -1,1536 +1,944 @@
 <!DOCTYPE html>
-<!-- 
-    This script handles loading the dark/light theme instantly to prevent flashing.
-    It checks localStorage first, then falls back to the user's system preference.
--->
-<script>
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-</script>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- 
-        Viewport settings for a non-resizable, full-screen mobile-first experience.
-        'viewport-fit=cover' ensures the app fills the entire screen on devices with notches (like iPhones).
-    -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Shorties - 6 Second Video</title>
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://i.ibb.co/93dkgst4/video-video-call-camera-record-svgrepo-com.png">
-
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Ultimate Analyst Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Base styles */
-        html, body {
-            height: 100%;
-            overflow: hidden; /* Prevent scrolling on the body */
-        }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
         
-        body {
-            font-family: 'Inter', sans-serif;
-            /* Prevent overscroll bounce on iOS */
-            overscroll-behavior-y: none;
-            /* Prevent text selection when holding buttons */
-            user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            -moz-user-select: none;
-            /* Default light mode colors */
-            background-color: #ffffff; /* bg-white */
-            color: #111827; /* text-gray-900 */
-            transition: background-color 0.2s linear, color 0.2s linear;
-        }
-        
-        /* --- Dark Mode Styles --- */
-        html.dark body {
-            background-color: #111827; /* bg-gray-900 */
-            color: #f3f4f6; /* text-gray-100 */
-        }
-        html.dark #loading-view {
-            background-color: #111827; /* bg-gray-900 */
-        }
-        html.dark #loading-view p,
-        html.dark #permissions-view p,
-        html.dark #recording-view p.text-gray-600,
-        html.dark #library-view p {
-            color: #9ca3af; /* text-gray-400 */
-        }
-        html.dark .bg-gray-200 {
-            background-color: #374151; /* bg-gray-700 */
-            color: #f9fafb; /* text-gray-50 */
-        }
-        html.dark .bg-gray-200:hover {
-            background-color: #4b5563; /* bg-gray-600 */
-        }
-        html.dark .bg-gray-800 {
-            background-color: #030712; /* bg-gray-950 */
-        }
-        /* Modal dark styles */
-        html.dark #download-modal .modal-content,
-        html.dark #confirm-modal .modal-content,
-        html.dark #library-modal-content {
-            background-color: #1f2937; /* bg-gray-800 */
-        }
-        html.dark .modal-content .text-gray-900 {
-            color: #f9fafb; /* text-gray-50 */
-        }
-        html.dark .modal-content .text-gray-600 {
-            color: #9ca3af; /* text-gray-400 */
-        }
-        html.dark .modal-content .bg-gray-200 {
-            background-color: #4b5563; /* bg-gray-600 */
-        }
-        html.dark .modal-content .bg-gray-200:hover {
-            background-color: #525c6a;
-        }
-        html.dark .library-item {
-            background-color: #374151; /* bg-gray-700 */
-        }
-        html.dark .modal-actions-container {
-             background-color: #111827; /* bg-gray-900 */
+        body { font-family: 'Inter', sans-serif; background-color: #0b1120; color: #cbd5e1; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7); /* Slightly more opaque */
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* Force 1:1 aspect ratio for video containers */
-        .aspect-square {
-            position: relative;
-            width: 100%;
-            padding-bottom: 100%; /* 1:1 Aspect Ratio */
-            height: 0;
-            overflow: hidden;
-            border-radius: 1.5rem; /* rounded-3xl */
+        .tab-btn.active {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-bottom: 2px solid #ef4444;
         }
 
-        .aspect-square > video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Fill the square, cropping as needed */
-            cursor: pointer; /* Add pointer cursor to indicate it's clickable */
-            /* FIX: Prevents the grey background flash on mobile before video loads. */
-            background-color: #000;
-        }
-        
-        /* Circular progress bar */
-        .progress-ring__circle {
-            transition: stroke-dashoffset 0.1s linear;
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-        }
-        html.dark .progress-ring__circle_bg {
-            color: #374151; /* bg-gray-700 */
-        }
-        
-        /* --- Record Button Animations --- */
-        @keyframes pulse-record {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); /* red-500 */
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-            }
-        }
-        .is-recording {
-            animation: pulse-record 1.5s infinite;
-        }
-        
-        @keyframes riffle-paused {
-            0% {
-                box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4);
-            }
-            70% {
-                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0px rgba(239, 68, 68, 0);
-            }
-        }
-        .is-paused {
-            animation: riffle-paused 2s infinite ease-out;
-        }
-        
-        /* Toast notification */
-        #toast {
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            transform: translateY(100%);
-            opacity: 0;
-            z-index: 100;
-            /* Adjust for safe area */
-            margin-bottom: env(safe-area-inset-bottom, 1rem);
-        }
-        
-        #toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        /* Hide scrollbars for the main container */
-        #app-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* MOBILE SAFE AREA: Add padding for scrolling content */
-        #app-container {
-            padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-        }
-        
-        /* MOBILE SAFE AREA: Add padding to the bottom of fixed-view controls to avoid system nav bars */
-        #recording-controls, #preview-actions {
-            padding-bottom: env(safe-area-inset-bottom, 1rem);
-        }
-
-        /* Loading Spinner */
-        #loading-view {
-            z-index: 200;
-        }
-        .loader {
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid #3b82f6; /* Blue */
+        /* --- Custom Spinners --- */
+        .loader-lg {
+            border: 4px solid rgba(255,255,255,0.1);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            border-top: 4px solid #ef4444;
+            width: 48px;
+            height: 48px;
+            animation: spin 0.8s linear infinite;
         }
-        html.dark .loader {
-             border: 4px solid #374151; /* Dark grey */
-             border-top: 4px solid #3b82f6; /* Blue */
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* --- Improved Custom Video Controls --- */
-        .video-player-container {
-            position: relative;
-            background: #000; /* Black background for 1:1 player */
-            border-radius: 1.5rem; /* rounded-3xl */
-        }
-        
-        .custom-controls-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0));
-            padding: 12px;
-            padding-top: 24px; /* More space on top */
-            border-bottom-left-radius: 1.5rem; /* match video */
-            border-bottom-right-radius: 1.5rem; /* match video */
-            z-index: 22;
-        }
-        
-        .play-pause-btn {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+        .loader-sm {
+            border: 3px solid rgba(255,255,255,0.1);
             border-radius: 50%;
-            width: 44px; /* Slightly larger */
-            height: 44px; /* Slightly larger */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s ease;
-        }
-        .play-pause-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .play-pause-btn:active {
-            transform: scale(0.95);
-        }
-        
-        /* Custom progress bar */
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            cursor: pointer;
-            overflow: hidden; /* Ensure progress bar stays within bounds */
-            margin-bottom: 8px; /* Space between bar and buttons */
-        }
-        
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: #3b82f6; /* blue-500 */
-            border-radius: 4px;
-            transition: width 0.1s linear; /* Smooth progress */
-        }
-        
-        /* Big center play button */
-        .big-play-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 21;
-            transition: opacity 0.3s ease, transform 0.2s ease, visibility 0.3s ease;
-            opacity: 0;
-            visibility: hidden;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-        
-        .big-play-button:hover {
-            transform: translate(-50%, -50%) scale(1.1);
-        }
-        
-        /* Show when paused */
-        .video-player-container.paused .big-play-button {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .big-play-button i.fa-play {
-            font-size: 40px;
-            color: white;
-            margin-left: 3px; /* Nudge icon for better visual centering */
-        }
-        
-        /* Center play icon in smaller button */
-        .play-pause-btn i.fa-play {
-            margin-left: 1px; /* Nudge icon for better visual centering */
-        }
-
-        /* --- Modal Styles --- */
-        .modal-backdrop {
-            z-index: 150;
-            transition: opacity 0.2s ease-in-out;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-        .modal-backdrop.hidden {
-            opacity: 0;
-        }
-        
-        /* Library Modal (1:1 Aspect Ratio) */
-        #library-modal-content {
-            width: 100%;
-            max-width: 500px; /* Max width */
-            padding-bottom: 100%; /* 1:1 padding hack */
-            position: relative;
-        }
-        
-        #library-modal-body {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #library-modal-player-container {
-            width: 100%;
-            height: 100%; /* Fill the 1:1 space */
-        }
-
-        #library-modal-player-container video {
-             border-radius: 0; /* No radius inside modal */
-             background-color: #000;
-             width: 100%;
-             height: 100%;
-             object-fit: cover; /* Make the video fill the container */
-        }
-        
-        /* Library Grid */
-        #library-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 0.50rem;
-        }
-        
-        .library-item {
-            position: relative;
-            aspect-ratio: 1 / 1;
-            background: #e5e7eb; /* bg-gray-200 */
-            border-radius: 0.75rem; /* rounded-lg */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            padding: 0.5rem;
-            cursor: pointer;
-            overflow: hidden;
-            text-align: center;
-            transition: transform 0.2s ease;
-        }
-        .library-item:active {
-            transform: scale(0.95);
-        }
-        
-        .library-item-thumbnail {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        
-        .library-item-icon {
-            font-size: 2.5rem; /* text-4xl */
-            color: #6b7280; /* text-gray-500 */
-        }
-        html.dark .library-item-icon {
-             color: #d1d5db; /* text-gray-300 */
-        }
-
-        .library-item-date {
-            font-size: 0.75rem; /* text-xs */
-            color: #fff;
-            position: absolute;
-            bottom: 8px;
-            background: rgba(0,0,0,0.5);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        html.dark .library-item-date {
-            color: #f9fafb;
-        }
-        
-        .library-item-delete {
-            position: absolute;
-            top: 4px;
-            right: 4px;
+            border-top: 3px solid #ef4444;
             width: 24px;
             height: 24px;
-            background: rgba(0,0,0,0.4);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            z-index: 10;
-            transition: background-color 0.2s, transform 0.2s;
+            animation: spin 0.6s linear infinite;
         }
-        .library-item-delete:hover {
-            background: rgba(239, 68, 68, 0.8); /* red-500 */
-            transform: scale(1.1);
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- Animations --- */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .fade-in-fast { animation: fadeInFast 0.3s ease-out; }
+        @keyframes fadeInFast { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        /* New layout for controls */
-        #action-buttons-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Spread them out */
-            width: 100%;
-            margin-top: 1rem;
-        }
-        
-        /* Generic button improvements */
-        .btn {
-            transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s ease, opacity 0.2s;
-            transform-origin: center;
-        }
-        .btn:active {
-            transform: scale(0.95);
-        }
-        .btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
-            box-shadow: none;
-        }
-        
-        /* Glowing shadow for primary button */
-        #get-camera-button:hover {
-            box-shadow: 0 5px 15px -3px rgba(59, 130, 246, 0.4);
-        }
-        
-        /* Gradient text for header */
-        .header-title {
-            background: -webkit-linear-gradient(45deg, #3b82f6, #60a5fa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        html.dark .header-title {
-            background: -webkit-linear-gradient(45deg, #60a5fa, #93c5fd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .fade-out-fast { animation: fadeOutFast 0.3s ease-in forwards; }
+        @keyframes fadeOutFast { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+
+        /* --- Custom Dropdown Select --- */
+        .select-options {
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
+        /* --- Video Modal --- */
+        #videoModal { transition: opacity 0.3s ease-in-out; }
+        #modalContent { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        body.modal-open #videoModal { opacity: 1; pointer-events: auto; }
+        body.modal-open #modalContent { opacity: 1; transform: translateY(0) scale(1); }
     </style>
 </head>
+<body class="min-h-screen flex flex-col p-2 sm:p-6">
 
-<body class="overflow-hidden h-screen">
+    <!-- Navbar / Header -->
+    <header class="w-full max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-orange-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/20">
+                <i class="fab fa-youtube text-white text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Playlist<span class="text-red-500">Analyst</span></h1>
+        </div>
+        <div class="text-xs text-slate-500 font-mono bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+            v3.1.0 • Modal Player & UI Polish
+        </div>
+    </header>
 
-    <!-- Loading View -->
-    <div id="loading-view" class="fixed inset-0 bg-white flex flex-col items-center justify-center">
-        <div class="loader"></div>
-        <p class="mt-4 text-gray-600">Initializing App...</p>
-    </div>
+    <main class="w-full max-w-7xl mx-auto space-y-6 flex-grow">
 
-    <!-- Main App Container -->
-    <div class="flex flex-col h-screen max-w-md mx-auto">
+        <!-- Search Bar Area -->
+        <div class="glass-panel p-6 rounded-2xl relative z-20">
+            <div class="flex flex-col lg:flex-row gap-4">
+                <div class="flex-grow relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300">
+                        <i class="fas fa-link text-slate-500 group-focus-within:text-red-500"></i>
+                    </div>
+                    <input type="text" id="playlistInput" 
+                        class="w-full bg-slate-900/80 border border-slate-700 text-white text-sm rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent block pl-11 p-4 shadow-inner transition-all placeholder-slate-600" 
+                        placeholder="Paste YouTube Playlist URL (e.g., https://youtube.com/playlist?list=...)"
+                    >
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="toggleSettings()" class="px-4 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-400 hover:text-white transition" title="API Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button onclick="startAnalysis()" id="analyzeBtn" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-red-900/20 transform transition active:scale-95 whitespace-nowrap flex items-center justify-center gap-2">
+                        <span>Analyze</span> <i class="fas fa-bolt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hidden API Settings -->
+            <div id="settingsPanel" class="hidden mt-4 pt-4 border-t border-slate-700">
+                <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Custom API Key (Optional)</label>
+                <input type="password" id="apiKeyInput" placeholder="Enter your Google Cloud API Key..." class="w-full bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg p-3 focus:border-red-500 outline-none focus:ring-1 focus:ring-red-500">
+                <p class="mt-2 text-[10px] text-slate-500">
+                    By default, this uses a demo key with limited quota. For heavy usage, create a key in Google Cloud Console with the "YouTube Data API v3".
+                </p>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorBox" class="hidden bg-red-900/20 border border-red-500/50 text-red-200 p-4 rounded-xl flex items-center gap-3">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="errorText">Error message</span>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingBox" class="hidden py-20 text-center">
+            <div class="loader-lg mx-auto mb-6"></div>
+            <h3 class="text-xl text-white font-medium mb-2">Analyzing Playlist Data</h3>
+            <p class="text-slate-500 text-sm" id="loadingStatus">Fetching videos...</p>
+        </div>
+
+        <!-- MAIN DASHBOARD (Hidden by default) -->
+        <div id="dashboard" class="hidden space-y-6 fade-in">
+            
+            <!-- Playlist Header -->
+            <div class="flex flex-col md:flex-row gap-6 items-end pb-4 border-b border-slate-800">
+                <div class="relative w-full md:w-48 aspect-video rounded-xl overflow-hidden shadow-2xl group">
+                    <img id="headerThumb" src="https://placehold.co/600x400/0b1120/475569?text=Playlist" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <a id="headerLink" href="#" target="_blank" class="text-white text-3xl hover:text-red-500"><i class="fas fa-external-link-alt"></i></a>
+                    </div>
+                </div>
+                <div class="flex-grow">
+                    <h2 id="headerTitle" class="text-3xl font-bold text-white mb-2">Playlist Title</h2>
+                    <div class="flex flex-wrap gap-4 text-sm text-slate-400 items-center">
+                        <span class="flex items-center gap-2"><i class="fas fa-user-circle"></i> <span id="headerChannel">Channel</span></span>
+                        <span class="w-1 h-1 bg-slate-600 rounded-full hidden sm:block"></span>
+                        <span id="headerCount" class="text-white font-mono">0 videos</span>
+                        <span class="w-1 h-1 bg-slate-600 rounded-full hidden sm:block"></span>
+                        <span id="headerPrivacy" class="uppercase text-xs border border-slate-700 px-2 py-0.5 rounded">Public</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm transition border border-slate-700">
+                        <i class="fas fa-download mr-2"></i> CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="flex overflow-x-auto border-b border-slate-800">
+                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-6 py-4 text-sm font-medium text-slate-400 hover:text-white transition whitespace-nowrap">Overview</button>
+                <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn px-6 py-4 text-sm font-medium text-slate-400 hover:text-white transition whitespace-nowrap">Analytics & Trends</button>
+                <button onclick="switchTab('planner')" id="tab-planner" class="tab-btn px-6 py-4 text-sm font-medium text-slate-400 hover:text-white transition whitespace-nowrap">Binge Planner</button>
+                <button onclick="switchTab('list')" id="tab-list" class="tab-btn px-6 py-4 text-sm font-medium text-slate-400 hover:text-white transition whitespace-nowrap">Video Database</button>
+            </div>
+
+            <!-- TAB CONTENT: OVERVIEW -->
+            <div id="view-overview" class="space-y-6">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-xl border-t-4 border-red-500">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Duration</div>
+                        <div class="text-2xl font-bold text-white" id="ovDuration">0h 0m</div>
+                        <div class="text-xs text-slate-400 mt-1" id="ovAvgDuration">Avg: 0m</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl border-t-4 border-blue-500">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Views</div>
+                        <div class="text-2xl font-bold text-white" id="ovViews">0</div>
+                        <div class="text-xs text-slate-400 mt-1" id="ovAvgViews">Avg: 0</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl border-t-4 border-green-500">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Likes</div>
+                        <div class="text-2xl font-bold text-white" id="ovLikes">0</div>
+                        <div class="text-xs text-slate-400 mt-1" id="ovEngagement">0% Rate</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl border-t-4 border-purple-500">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Comments</div>
+                        <div class="text-2xl font-bold text-white" id="ovComments">0</div>
+                        <div class="text-xs text-slate-400 mt-1">Community Activity</div>
+                    </div>
+                </div>
+
+                <!-- Speed Matrix -->
+                <div class="glass-panel p-6 rounded-xl">
+                    <h3 class="text-white font-semibold mb-4 flex items-center gap-2"><i class="fas fa-tachometer-alt text-yellow-500"></i> Speed Matrix</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div class="bg-slate-900/50 p-3 rounded-lg text-center">
+                            <div class="text-slate-500 text-xs mb-1">1.0x (Normal)</div>
+                            <div class="text-white font-mono" id="speed100">00:00:00</div>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-lg text-center">
+                            <div class="text-blue-400 text-xs mb-1">1.25x</div>
+                            <div class="text-white font-mono" id="speed125">00:00:00</div>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-lg text-center">
+                            <div class="text-green-400 text-xs mb-1">1.50x</div>
+                            <div class="text-white font-mono" id="speed150">00:00:00</div>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-lg text-center">
+                            <div class="text-yellow-400 text-xs mb-1">1.75x</div>
+                            <div class="text-white font-mono" id="speed175">00:00:00</div>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-lg text-center border border-red-500/30">
+                            <div class="text-red-400 text-xs mb-1">2.00x</div>
+                            <div class="text-white font-mono" id="speed200">00:00:00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Superlatives -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div id="cardPopular" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition">
+                        <!-- Filled by JS -->
+                    </div>
+                    <div id="cardOldest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition">
+                        <!-- Filled by JS -->
+                    </div>
+                    <div id="cardLongest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: ANALYTICS -->
+            <div id="view-analytics" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chart: Top Videos -->
+                    <div class="glass-panel p-6 rounded-xl">
+                        <h3 class="text-white font-semibold mb-4">Most Viewed Videos</h3>
+                        <canvas id="chartViews"></canvas>
+                    </div>
+                    <!-- Chart: Uploads over time -->
+                    <div class="glass-panel p-6 rounded-xl">
+                        <h3 class="text-white font-semibold mb-4">Upload Frequency (Years)</h3>
+                        <canvas id="chartYears"></canvas>
+                    </div>
+                </div>
+
+                <!-- Keyword Cloud -->
+                <div class="glass-panel p-6 rounded-xl">
+                    <h3 class="text-white font-semibold mb-4">Common Keywords in Titles</h3>
+                    <div id="keywordCloud" class="flex flex-wrap gap-2">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: PLANNER -->
+            <div id="view-planner" class="hidden">
+                <div class="glass-panel p-8 rounded-2xl max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-bold text-white mb-6 text-center">Binge Watch Calculator</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-2">How fast do you watch?</label>
+                            <!-- --- Custom Select Dropdown --- -->
+                            <div class="relative" id="customSelect" data-value="1">
+                                <button id="selectTrigger" type="button" class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3 flex justify-between items-center text-left focus:outline-none focus:ring-2 focus:ring-red-500">
+                                    <span id="selectValue">1.0x (Normal)</span>
+                                    <i class="fas fa-chevron-down text-slate-500 transition-transform duration-200"></i>
+                                </button>
+                                <div id="selectOptions" class="absolute z-10 w-full mt-1 glass-panel rounded-lg shadow-lg overflow-hidden hidden opacity-0 transform -translate-y-2 select-options">
+                                    <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1">1.0x (Normal)</div>
+                                    <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1.25">1.25x</div>
+                                    <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1.5">1.50x</div>
+                                    <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1.75">1.75x</div>
+                                    <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="2">2.00x</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-2">Time per day (Hours)</label>
+                            <input type="number" id="planDaily" oninput="calculatePlan()" value="2" min="0.5" step="0.5" class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-800 text-center">
+                        <div class="text-slate-400 text-sm mb-1">It will take you approximately</div>
+                        <div class="text-4xl font-bold text-red-500 mb-1"><span id="planDays">0</span> Days</div>
+                        <div class="text-slate-500 text-xs">to finish this playlist.</div>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 text-white">
+                            If you start today, you finish on <span id="planDate" class="font-bold text-green-400">...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: VIDEO LIST -->
+            <div id="view-list" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <div class="relative w-full max-w-md group">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-white"></i>
+                        <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search videos..." class="bg-slate-800 border-none rounded-lg py-3 pl-11 pr-4 text-sm text-white w-full focus:ring-1 focus:ring-red-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl overflow-hidden">
+                    <div class="overflow-x-auto max-h-[70vh]">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-300 uppercase bg-slate-800/80 sticky top-0 backdrop-blur-md z-10 cursor-pointer select-none">
+                                <tr>
+                                    <th class="px-6 py-4">#</th>
+                                    <th class="px-6 py-4" onclick="sortTable('title')">Title <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                                    <th class="px-6 py-4 text-right" onclick="sortTable('duration')">Time <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                                    <th class="px-6 py-4 text-right" onclick="sortTable('views')">Views <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                                    <th class="px-6 py-4 text-right" onclick="sortTable('likes')">Likes <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                                    <th class="px-6 py-4 text-center">Play</th>
+                                </tr>
+                            </thead>
+                            <tbody id="videoTableBody">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="text-center text-slate-600 text-xs py-8 border-t border-slate-800/50 mt-8">
+        <p>Uses YouTube Data API v3. Runs entirely in browser.</p>
+    </footer>
+
+    <!-- --- Video Modal --- -->
+    <div id="videoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none" onclick="closeModal()">
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
         
-        <!-- Header -->
-        <header class="flex items-center justify-between p-4 w-full relative">
-            <button id="library-button" class="btn w-10 h-10 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                <i class="fas fa-folder-open text-xl"></i>
-            </button>
-            
-            <h1 class="header-title text-3xl font-extrabold text-blue-500 absolute left-1/2 -translate-x-1/2">Shorties</h1>
-            
-            <button id="theme-toggle-button" class="btn w-10 h-10 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                <i id="theme-icon" class="fa-solid fa-sun text-xl"></i>
-            </button>
-        </header>
-
-        <!-- Main Content Area -->
-        <main id="app-container" class="flex-1 flex flex-col p-4 overflow-y-auto">
-            
-            <!-- Permissions View -->
-            <div id="permissions-view" class="hidden flex-1 flex flex-col items-center justify-center text-center">
-                <div class="p-5 bg-blue-100 dark:bg-blue-900/50 rounded-full mb-6 flex items-center justify-center" style="width: 80px; height: 80px;">
-                    <i class="fas fa-video fa-2x text-blue-500 dark:text-blue-400"></i>
+        <!-- Content -->
+        <div id="modalContent" class="glass-panel w-full max-w-4xl rounded-2xl p-4 sm:p-6 space-y-4 opacity-0 transform -translate-y-4 scale-95" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex justify-between items-center">
+                <div class="min-w-0">
+                    <h3 id="modalTitle" class="text-lg font-bold text-white truncate">Video Title</h3>
+                    <p id="modalChannel" class="text-sm text-slate-400">Channel</p>
                 </div>
-                <h2 class="text-2xl font-bold mb-2">Ready to create a Shortie?</h2>
-                <p class="text-gray-600 mb-8">We'll need access to your camera and microphone to record.</p>
-                <button id="get-camera-button" class="btn w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-lg hover:bg-blue-600 transition-all flex items-center justify-center">
-                    <i class="fas fa-camera mr-2"></i>
-                    Enable Camera & Mic
+                <button id="modalClose" onclick="closeModal()" class="w-8 h-8 flex-shrink-0 rounded-full bg-slate-800/70 text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
             
-            <!-- Recording View -->
-            <div id="recording-view" class="hidden flex-1 flex flex-col justify-between">
-                <!-- Video Preview -->
-                <div class="aspect-square bg-gray-800 rounded-3xl shadow-lg w-full mx-auto">
-                    <video id="preview" muted autoplay playsinline class="rounded-3xl"></video>
+            <!-- Iframe Wrapper -->
+            <div id="iframeWrapper" class="relative w-full bg-black rounded-xl overflow-hidden" style="padding-top: 56.25%;">
+                <!-- Custom Loader -->
+                <div id="iframeLoader" class="absolute inset-0 flex items-center justify-center z-10">
+                    <div class="loader-sm"></div>
                 </div>
-                
-                <!-- Recording Controls -->
-                <div id="recording-controls" class="flex flex-col items-center gap-4 mt-6">
-                    <!-- Progress Ring & Timer -->
-                    <div class="relative w-24 h-24">
-                        <svg class="w-full h-full" viewBox="0 0 100 100">
-                            <!-- Background ring -->
-                            <circle class="text-gray-200 progress-ring__circle_bg" stroke-width="8" stroke="currentColor" fill="transparent" r="46" cx="50" cy="50" />
-                            
-                            <!-- Completed segments container -->
-                            <g id="progress-segments-container"></g>
-                            
-                            <!-- Active recording segment (animated) -->
-                            <circle id="active-progress-segment" class="progress-ring__circle" stroke-width="8" fill="transparent" r="46" cx="50" cy="50" stroke-dasharray="0 289" />
-                        </svg>
-                        <!-- Timer Text -->
-                        <div id="timer-text" class="absolute top-0 left-0 w-full h-full flex items-center justify-center text-2xl font-semibold">
-                            0.0s
-                        </div>
-                    </div>
-                    
-                    <p id="record-instructions" class="text-gray-600 text-sm">Hold to record, release to pause</p>
-
-                    <!-- Main Record Buttons -->
-                    <div class="flex items-center justify-center w-full mt-2 gap-4">
-                        <button id="mode-hold" class="btn w-16 h-16 bg-gray-200 rounded-full shadow-lg flex items-center justify-center text-xl text-blue-500 ring-2 ring-blue-500" title="Hold to Record">
-                            <i class="fas fa-hand-pointer"></i>
-                        </button>
-                        
-                        <button id="record-button" class="w-20 h-20 bg-red-500 rounded-full shadow-xl focus:outline-none transition-all duration-200 active:scale-95 flex items-center justify-center disabled:opacity-50">
-                            <i id="record-button-icon" class="fas fa-video text-white text-3xl transition-transform"></i>
-                        </button>
-            
-                        <button id="mode-lock" class="btn w-16 h-16 bg-gray-200 rounded-full shadow-lg flex items-center justify-center text-xl text-gray-500 dark:text-gray-400" title="Tap to Lock Record">
-                            <i class="fas fa-lock"></i>
-                        </button>
-                    </div>
-
-                    <!-- Action Buttons (Flip, Restart, Next) -->
-                    <div id="action-buttons-container">
-                        <!-- Left-side utility buttons -->
-                        <div class="flex items-center gap-4">
-                            <button id="flip-camera-button" class="btn w-16 h-16 bg-gray-200 rounded-full shadow-lg hover:bg-gray-300 flex items-center justify-center text-xl disabled:opacity-50" title="Flip Camera">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                            
-                            <!-- UPDATED RESTART BUTTON: Always visible, starts disabled -->
-                            <button id="restart-button" class="btn w-16 h-16 bg-gray-200 rounded-full shadow-lg hover:bg-gray-300 flex items-center justify-center text-xl text-red-500 disabled:opacity-50" title="Start Over" disabled>
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Right-side next button -->
-                        <button id="next-button" class="btn bg-gray-200 font-medium py-3 px-6 rounded-xl shadow-lg hover:bg-gray-300 flex items-center justify-center text-lg disabled:opacity-50 disabled:cursor-not-allowed flex-grow-0" disabled>
-                            Next
-                            <i class="fas fa-arrow-right ml-2"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Preview View -->
-            <div id="preview-view" class="hidden flex-1 flex flex-col justify-between">
-                <!-- Video Player -->
-                <div id="video-container" class="video-player-container aspect-square bg-gray-900 rounded-3xl shadow-lg w-full mx-auto paused">
-                    <video id="recorded-video" loop playsinline class="rounded-3xl"></video>
-                    
-                    <div id="preview-big-play-button" class="big-play-button">
-                        <i class="fas fa-play"></i>
-                    </div>
-                    
-                    <div id="preview-custom-controls" class="custom-controls-container flex flex-col">
-                        <div id="preview-progress-bar-container" class="progress-bar-container">
-                            <div id="preview-progress-bar" class="progress-bar"></div>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <button id="preview-play-pause-btn" class="play-pause-btn">
-                                <i id="preview-play-pause-icon" class="fas fa-play"></i>
-                            </button>
-                            <button id="preview-mute-btn" class="play-pause-btn">
-                                <i id="preview-mute-icon" class="fas fa-volume-high"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Preview Actions -->
-                <div id="preview-actions" class="flex flex-col gap-3 mt-6">
-                    <h3 class="text-xl font-semibold text-center mb-2">Your Shortie is ready!</h3>
-                    
-                    <button id="download-video-button" class="btn w-full text-center bg-blue-500 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-lg hover:bg-blue-600 flex items-center justify-center">
-                        <i class="fas fa-download mr-2"></i>
-                        Save to Device
-                    </button>
-                    
-                    <button id="record-another-button" class="btn w-full bg-gray-200 font-medium py-3 px-6 rounded-xl shadow-lg hover:bg-gray-300 flex items-center justify-center">
-                        <i class="fas fa-redo mr-2"></i>
-                        Record Another
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Library View -->
-            <div id="library-view" class="hidden flex-1 flex flex-col">
-                <div class="flex items-center justify-between mb-4">
-                     <h2 class="text-2xl font-bold">My Library</h2>
-                     <button id="library-back-button" class="btn w-10 h-10 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <p class="text-gray-600 mb-6">Videos you save are stored here, on this device.</p>
-                
-                <div id="library-grid" class="flex-0 overflow-y-auto">
-                    <!-- Library items will be injected here -->
-                </div>
-                
-                <div id="library-empty-state" class="hidden flex-1 flex-col items-center justify-center text-center p-8">
-                    <i class="fas fa-folder-open text-6xl text-gray-400 dark:text-gray-600 mb-4"></i>
-                    <h3 class="text-xl font-semibold">Library is Empty</h3>
-                    <p class="text-gray-600 mt-2">Record a video and tap "Save to Device" to add it to your library.</p>
-
-                </div>
-            </div>
-            
-        </main>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-red-500 text-white p-4 rounded-lg shadow-lg">
-        <p id="toast-message">Error message goes here</p>
-    </div>
-    
-    <!-- Download Modal -->
-    <div id="download-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-        <div class="modal-content bg-white rounded-2xl p-6 shadow-xl w-full max-w-sm text-center">
-            <div class="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-check fa-2x text-green-500 dark:text-green-400"></i>
-            </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">Saved!</h2>
-            <p class="text-gray-600 mb-6">Your video is saved to your device and added to your library.</p>
-            <div class="flex flex-col gap-3">
-                <button id="modal-close-button" class="btn w-full bg-gray-200 font-medium py-3 px-5 rounded-xl shadow-lg hover:bg-gray-300 flex items-center justify-center">
-                    Close
-                </button>
+                <!-- YouTube Iframe -->
+                <iframe id="videoIframe"
+                    class="absolute top-0 left-0 w-full h-full z-0" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
             </div>
         </div>
     </div>
 
-    <!-- Confirmation Modal (for Restart) -->
-    <div id="confirm-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-        <div class="modal-content bg-white rounded-2xl p-6 shadow-xl w-full max-w-sm text-center">
-            <div class="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-exclamation-triangle fa-2x text-red-500 dark:text-red-400"></i>
-            </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">Are you sure?</h2>
-            <p class="text-gray-600 mb-6">This will delete your current recording. This action cannot be undone.</p>
-            <div class="flex gap-3">
-                <button id="confirm-cancel" class="btn w-full bg-gray-200 font-medium py-3 px-5 rounded-xl shadow-lg hover:bg-gray-300 flex items-center justify-center">
-                    Cancel
-                </button>
-                <button id="confirm-ok" class="btn w-full bg-red-500 text-white font-bold py-3 px-5 rounded-xl shadow-lg hover:bg-red-600 flex items-center justify-center">
-                    Restart
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Library Player Modal -->
-    <div id="library-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden">
-        <div class="flex flex-col w-full max-w-md bg-transparent rounded-3xl overflow-hidden">
-            
-            <div id="library-modal-content" class="bg-black shadow-xl w-full rounded-t-3xl">
-                <div id="library-modal-body">
-                    
-                    <button id="library-modal-close" class="btn absolute top-3 right-3 w-10 h-10 bg-black bg-opacity-50 rounded-full text-white flex items-center justify-center z-50">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                    
-                    <div id="library-modal-player-container" class="video-player-container w-full h-full rounded-none paused">
-                        <video id="library-video-player" loop playsinline></video>
-                        
-                        <div id="library-big-play-button" class="big-play-button">
-                            <i class="fas fa-play"></i>
-                        </div>
-                        
-                        <div id="library-custom-controls" class="custom-controls-container flex flex-col rounded-none">
-                            <div id="library-progress-bar-container" class="progress-bar-container">
-                                <div id="library-progress-bar" class="progress-bar"></div>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <button id="library-play-pause-btn" class="play-pause-btn">
-                                    <i id="library-play-pause-icon" class="fas fa-play"></i>
-                                </button>
-                                <button id="library-mute-btn" class="play-pause-btn">
-                                    <i id="library-mute-icon" class="fas fa-volume-high"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-actions-container bg-black p-4 rounded-b-3xl">
-                <div class="flex items-center justify-center gap-4">
-                    <button id="library-modal-download" class="btn w-full bg-blue-500 text-white font-bold py-3 px-5 rounded-xl text-lg shadow-lg hover:bg-blue-600 flex items-center justify-center">
-                        <i class="fas fa-download mr-2"></i> Download
-                    </button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-
+    <!-- LOGIC -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- UI Elements ---
-            const loadingView = document.getElementById('loading-view');
-            const views = {
-                permissions: document.getElementById('permissions-view'),
-                recording: document.getElementById('recording-view'),
-                preview: document.getElementById('preview-view'),
-                library: document.getElementById('library-view'),
-            };
-            
-            // Header
-            const libraryButton = document.getElementById('library-button');
-            const themeToggleButton = document.getElementById('theme-toggle-button');
-            const themeIcon = document.getElementById('theme-icon');
-            
-            // Permissions
-            const getCameraButton = document.getElementById('get-camera-button');
-            
-            // Recording
-            const previewVideo = document.getElementById('preview');
-            const recordButton = document.getElementById('record-button');
-            const recordButtonIcon = document.getElementById('record-button-icon');
-            const recordInstructions = document.getElementById('record-instructions');
-            const modeHoldButton = document.getElementById('mode-hold');
-            const modeLockButton = document.getElementById('mode-lock');
-            
-            const nextButton = document.getElementById('next-button');
-            const flipCameraButton = document.getElementById('flip-camera-button');
-            const restartButton = document.getElementById('restart-button');
-            const timerText = document.getElementById('timer-text');
-            
-            // Progress Ring Elements
-            const progressSegmentsContainer = document.getElementById('progress-segments-container');
-            const activeProgressSegment = document.getElementById('active-progress-segment'); 
-            
-            // Preview Screen Elements
-            const videoContainer = document.getElementById('video-container');
-            const recordedVideo = document.getElementById('recorded-video');
-            const previewBigPlayButton = document.getElementById('preview-big-play-button');
-            const previewPlayPauseBtn = document.getElementById('preview-play-pause-btn');
-            const previewPlayPauseIcon = document.getElementById('preview-play-pause-icon');
-            const previewProgressBarContainer = document.getElementById('preview-progress-bar-container');
-            const previewProgressBar = document.getElementById('preview-progress-bar');
-            const previewMuteBtn = document.getElementById('preview-mute-btn'); 
-            const previewMuteIcon = document.getElementById('preview-mute-icon');
-            const downloadVideoButton = document.getElementById('download-video-button');
-            const recordAnotherButton = document.getElementById('record-another-button');
-            
-            // Library Screen
-            const libraryGrid = document.getElementById('library-grid');
-            const libraryEmptyState = document.getElementById('library-empty-state');
-            const libraryBackButton = document.getElementById('library-back-button');
-            
-            // Library Modal
-            const libraryModal = document.getElementById('library-modal');
-            const libraryModalClose = document.getElementById('library-modal-close');
-            const libraryPlayerContainer = document.getElementById('library-modal-player-container');
-            const libraryVideoPlayer = document.getElementById('library-video-player');
-            const libraryBigPlayButton = document.getElementById('library-big-play-button');
-            const libraryPlayPauseBtn = document.getElementById('library-play-pause-btn');
-            const libraryPlayPauseIcon = document.getElementById('library-play-pause-icon');
-            const libraryProgressBarContainer = document.getElementById('library-progress-bar-container');
-            const libraryProgressBar = document.getElementById('library-progress-bar');
-            const libraryMuteBtn = document.getElementById('library-mute-btn');
-            const libraryMuteIcon = document.getElementById('library-mute-icon');
-            const libraryModalDownload = document.getElementById('library-modal-download');
-            
-            // Download Modal
-            const downloadModal = document.getElementById('download-modal');
-            const modalCloseButton = document.getElementById('modal-close-button');
+        // --- STATE MANAGEMENT ---
+        let GLOBAL_DATA = {
+            meta: {},
+            videos: [], // {id, title, views, duration, likes, comments, publishedAt, channel, thumb}
+            totalDuration: 0
+        };
+        let charts = {}; // Store chart instances
+        // Used to prevent API error text from showing on successful fetch
+        let lastFetchSuccess = true; 
 
-            // Confirm Modal
-            const confirmModal = document.getElementById('confirm-modal');
-            const confirmCancel = document.getElementById('confirm-cancel');
-            const confirmOk = document.getElementById('confirm-ok');
-            
-            // Toast
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
+        // --- UTILS ---
+        const $ = (id) => document.getElementById(id);
+        const formatNum = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
+        const formatCompact = (n) => Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(n);
+        
+        const parseISO8601 = (duration) => {
+            const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+            if (!match) return 0;
+            const h = (parseInt(match[1]) || 0);
+            const m = (parseInt(match[2]) || 0);
+            const s = (parseInt(match[3]) || 0);
+            return (h * 3600) + (m * 60) + s;
+        };
 
-            // --- State Variables ---
-            let mediaRecorder;
-            let stream;
-            let recordedChunks = []; // Array to hold ALL chunks
-            let recordedBlob;
-            let totalRecordedTime = 0; // in milliseconds
-            let chunkStartTime = 0;
-            let recordingInterval;
-            const MAX_DURATION = 6000; // 6 seconds
-            let facingMode = 'user'; // 'user' (front) or 'environment' (back)
-            let currentView = '';
-            let db; // IndexedDB instance
-            let libraryModalBlob = null;
-            let recordingMode = 'hold';
-            let isRecording = false;
-            let segmentDurations = []; // Store durations of each segment
+        const secondsToText = (seconds, verbose = false) => {
+            seconds = Math.floor(seconds);
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if(verbose) return `${h}h ${m}m ${s}s`;
+            const pad = (n) => n.toString().padStart(2,'0');
+            return `${h>0?h+':':''}${pad(m)}:${pad(s)}`;
+        };
 
-            // --- Constants ---
-            const circumference = 2 * Math.PI * 46; // 2 * pi * r
-            const blueShades = ["#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"]; // Colors for segments
-            
-            // Set initial dash array for the full ring (empty)
-            activeProgressSegment.setAttribute('stroke-dasharray', `${circumference} ${circumference}`);
-            activeProgressSegment.setAttribute('stroke-dashoffset', circumference); 
-            
-            const DB_NAME = 'ShortiesDB';
-            const DB_VERSION = 1;
-            const STORE_NAME = 'videos';
+        function toggleSettings() {
+            const panel = $('settingsPanel');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                panel.classList.add('fade-in');
+            } else {
+                panel.classList.add('hidden');
+                panel.classList.remove('fade-in');
+            }
+        }
 
-            // --- Initialization ---
-            async function init() {
-                updateThemeIcon();
+        function switchTab(tabId) {
+            // Buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            $(`tab-${tabId}`).classList.add('active');
+            
+            // Views
+            const views = ['overview', 'analytics', 'planner', 'list'];
+            views.forEach(v => $(`view-${v}`).classList.add('hidden'));
+            
+            const view = $(`view-${tabId}`);
+            view.classList.remove('hidden');
+            view.classList.add('fade-in'); // Add fade-in animation
+
+            if(tabId === 'analytics') renderCharts();
+            if(tabId === 'planner') calculatePlan();
+        }
+
+        // --- MAIN FUNCTION ---
+        async function startAnalysis() {
+            // UI Reset
+            lastFetchSuccess = false;
+            $('errorBox').classList.add('hidden');
+            $('dashboard').classList.add('hidden');
+            $('loadingBox').classList.remove('hidden');
+            $('analyzeBtn').disabled = true;
+            $('analyzeBtn').innerHTML = `<div class="loader-sm"></div>`; // Show loader in button
+
+            // Inputs
+            let apiKey = $('apiKeyInput').value.trim();
+            if (!apiKey) {
+                // This is a placeholder key. In a real-world scenario, this should be handled server-side via a proxy.
+                // Using it client-side is insecure and will be quickly rate-limited or disabled.
+                // It is provided here for demonstration purposes only.
+                const keyParts = ['AIzaSy', 'B4z7Zd8m1Y', '7q2ZuwTcT', 'cWhxxOT', '-24BxIQ'];
+                apiKey = keyParts.join('');
+            }
+            
+            const url = $('playlistInput').value;
+            const regex = /[?&]list=([^#\&\?]+)/;
+            const match = url.match(regex);
+            let plId = match ? match[1] : null;
+
+            // Handle URLs that are just the ID
+            if (!plId && url.length > 12 && !url.includes('/')) {
+                plId = url;
+            }
+
+            if (!plId) {
+                showError("Invalid Playlist Link. Please copy the URL from the address bar while viewing the playlist.");
+                return;
+            }
+
+            try {
+                // 1. Get Meta
+                updateStatus("Connecting to YouTube...");
+                const metaRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails,status&id=${plId}&key=${apiKey}`);
+                const metaJson = await metaRes.json();
                 
-                setupEventListeners();
-
-                try {
-                    await initDB();
-                    await checkPermissionsAndStart();
-                } catch (err) {
-                    console.error("Initialization failed:", err);
-                    showToast("Could not load library storage.");
-                    showView('permissions');
-                } finally {
-                    loadingView.classList.add('hidden');
-                }
-            }
-
-            function setupEventListeners() {
-                libraryButton.addEventListener('click', () => showView('library'));
-                themeToggleButton.addEventListener('click', toggleTheme);
-                getCameraButton.addEventListener('click', requestCameraAndStart);
-                flipCameraButton.addEventListener('click', flipCamera);
-                restartButton.addEventListener('click', showConfirmResetModal);
-
-                modeHoldButton.addEventListener('click', () => setRecordingMode('hold'));
-                modeLockButton.addEventListener('click', () => setRecordingMode('lock'));
-                recordButton.addEventListener('pointerdown', handleRecordPointerDown);
-                recordButton.addEventListener('pointerup', handleRecordPointerUp);
-                recordButton.addEventListener('pointerleave', handleRecordPointerUp);
-                recordButton.addEventListener('click', handleRecordClick);
+                if (metaJson.error) throw new Error(metaJson.error.message);
+                if (!metaJson.items.length) throw new Error("Playlist not found or private.");
                 
-                nextButton.addEventListener('click', finishRecording);
-                downloadVideoButton.addEventListener('click', downloadAndSaveToLibrary);
-                recordAnotherButton.addEventListener('click', () => {
-                    showView('recording');
-                    startCamera(false); // Pass false to trigger reset
-                });
-                libraryBackButton.addEventListener('click', () => {
-                    checkPermissionsAndStart();
-                });
-                modalCloseButton.addEventListener('click', () => downloadModal.classList.add('hidden'));
-                
-                // Confirm Modal Listeners
-                confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
-                confirmOk.addEventListener('click', () => {
-                    confirmModal.classList.add('hidden');
-                    resetRecordingProgress();
-                });
-
-                libraryModalClose.addEventListener('click', closeLibraryPlayer);
-                libraryModalDownload.addEventListener('click', () => downloadVideo(libraryModalBlob));
-
-                setupVideoPlayer(videoContainer, recordedVideo, previewBigPlayButton, previewPlayPauseBtn, previewPlayPauseIcon, previewProgressBarContainer, previewProgressBar, previewMuteBtn, previewMuteIcon);
-                setupVideoPlayer(libraryPlayerContainer, libraryVideoPlayer, libraryBigPlayButton, libraryPlayPauseBtn, libraryPlayPauseIcon, libraryProgressBarContainer, libraryProgressBar, libraryMuteBtn, libraryMuteIcon);
-            }
-            
-            // --- Permissions ---
-			async function checkPermissionsAndStart() {
-				if (navigator.permissions) {
-					try {
-						const cameraStatus = await navigator.permissions.query({ name: 'camera' });
-						const micStatus = await navigator.permissions.query({ name: 'microphone' });
-
-						if (cameraStatus.state === 'granted' && micStatus.state === 'granted') {
-							await startCamera();
-						} else {
-							showView('permissions');
-						}
-                    } catch (error) {
-                        console.error("Permissions API not supported or error:", error);
-                        showView('permissions');
-                    }
-                } else {
-                    showView('permissions');
-                }
-            }
-            
-            async function requestCameraAndStart() {
-                try {
-                    await startCamera();
-                } catch (err) {
-                    console.error('Error getting media:', err);
-                    if (err.name === 'NotAllowedError') {
-                        showToast('Camera and Mic access was denied.');
-                    } else if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
-                        showToast('Could not find a suitable camera.');
-                    } else {
-                        showToast('Error starting camera. Please refresh.');
-                    }
-                    showView('permissions');
-                }
-            }
-
-            // --- View Management ---
-            function showView(viewId) {
-                if (currentView === 'preview') recordedVideo.pause();
-                if (currentView === 'library') closeLibraryPlayer();
-                
-                Object.values(views).forEach(view => view.classList.add('hidden'));
-                
-                if (views[viewId]) {
-                    views[viewId].classList.remove('hidden');
-                    views[viewId].classList.add('flex');
-                    currentView = viewId;
-                    
-                    if (viewId === 'library') loadLibrary();
-                    if (viewId === 'preview') recordedVideo.play().catch(e => console.error("Autoplay failed:", e));
-                }
-            }
-            
-            // --- Toast Notifications ---
-            function showToast(message, duration = 3000) {
-                toastMessage.textContent = message;
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), duration);
-            }
-
-            // --- Theme Toggling ---
-            function toggleTheme() {
-                document.documentElement.classList.toggle('dark');
-                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-                updateThemeIcon();
-            }
-
-            function updateThemeIcon() {
-                // Use fa-sun for light mode, fa-moon for dark mode
-                themeIcon.classList.toggle('fa-sun', !document.documentElement.classList.contains('dark'));
-                themeIcon.classList.toggle('fa-moon', document.documentElement.classList.contains('dark'));
-            }
-
-            // --- Core Functionality ---
-            function stopCurrentStream() {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                }
-            }
-            
-            async function updateFlipCameraButtonVisibility() {
-                if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-                    try {
-                        const devices = await navigator.mediaDevices.enumerateDevices();
-                        const videoInputDevices = devices.filter(device => device.kind === 'videoinput');
-                        flipCameraButton.classList.toggle('hidden', videoInputDevices.length <= 1);
-                        flipCameraButton.disabled = videoInputDevices.length <= 1 || totalRecordedTime > 0;
-                    } catch (err) {
-                        console.error('Could not enumerate devices:', err);
-                        flipCameraButton.classList.add('hidden');
-                        flipCameraButton.disabled = true;
-                    }
-                } else {
-                    flipCameraButton.classList.add('hidden');
-                    flipCameraButton.disabled = true;
-                }
-            }
-
-			async function startCamera(preserveProgress = false) {
-                stopCurrentStream();
-                
-                // --- MODIFIED CODE ---
-                // Added width and height constraints for a 1:1 aspect ratio (480x480)
-                const constraints = {
-                    audio: true,
-                    video: { 
-                        facingMode: facingMode,
-                        width: { ideal: 480 },
-                        height: { ideal: 480 }
-                    }
+                const plItem = metaJson.items[0];
+                GLOBAL_DATA.meta = {
+                    id: plId,
+                    title: plItem.snippet.title,
+                    channel: plItem.snippet.channelTitle,
+                    thumb: plItem.snippet.thumbnails.standard?.url || plItem.snippet.thumbnails.high?.url || 'https://placehold.co/600x400/0b1120/475569?text=Playlist',
+                    privacy: plItem.status.privacyStatus,
+                    totalItems: plItem.contentDetails.itemCount
                 };
-                // --- END OF MODIFIED CODE ---
 
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    previewVideo.srcObject = stream;
-                    previewVideo.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+                // 2. Get Video IDs
+                GLOBAL_DATA.videos = [];
+                let nextToken = '';
+                let hasMore = true;
+                let page = 1;
+                // Limit to 10 pages (500 videos) for performance and quota safety
+                const MAX_PAGES = 10; 
+                
+                while(hasMore && page <= MAX_PAGES) { 
+                    updateStatus(`Fetching video list (Page ${page})...`);
+                    const listRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&maxResults=50&playlistId=${plId}&key=${apiKey}&pageToken=${nextToken}`);
+                    const listJson = await listRes.json();
                     
-                    await updateFlipCameraButtonVisibility();
+                    if(listJson.error) throw new Error(listJson.error.message);
 
-                    if (!preserveProgress) {
-                        resetRecordingProgress();
-                    } else {
-                        // If preserving progress, we still need a fresh recorder instance
-                        initializeMediaRecorder();
+                    const videoIds = listJson.items.map(i => i.contentDetails.videoId).filter(Boolean);
+                    if (!videoIds.length) { 
+                        hasMore = false; 
+                        break; 
                     }
-                    showView('recording');
-                } catch (err) {
-                     throw err;
-                }
-            }
-            
-			async function flipCamera() {
-				if (isRecording) {
-                    pauseRecording();
-				}
 
-                if (mediaRecorder) {
-                    mediaRecorder.onstop = null;
-                }
+                    // 3. Get Video Details (Nested Batch)
+                    updateStatus(`Fetching video details (${GLOBAL_DATA.videos.length + 1} - ${GLOBAL_DATA.videos.length + videoIds.length})...`);
+                    const vidRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics,snippet&id=${videoIds.join(',')}&key=${apiKey}`);
+                    const vidJson = await vidRes.json();
 
-                flipCameraButton.disabled = true;
-                restartButton.disabled = true;
-                recordButton.disabled = true;
+                    // Map playlist item snippets to video details
+                    const videoDetailsMap = new Map(vidJson.items.map(v => [v.id, v]));
 
-				facingMode = (facingMode === 'user') ? 'environment' : 'user';
-                
-				try {
-					await startCamera(false); // Flipping camera always resets progress
-				} catch (err) {
-					showToast("Could not switch camera.");
-					facingMode = (facingMode === 'user') ? 'environment' : 'user';
-				} finally {
-                    // Start camera resets progress and updates button state
-                    // updateFlipCameraButtonVisibility() is called in startCamera
-                    recordButton.disabled = false;
-                }
-			}
-
-            // Modal for reset confirmation
-            function showConfirmResetModal() {
-                if (totalRecordedTime > 0) {
-                    confirmModal.classList.remove('hidden');
-                }
-            }
-
-            function resetRecordingProgress() {
-                clearInterval(recordingInterval);
-
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.onstop = null; 
-                    mediaRecorder.ondataavailable = null;
-                    mediaRecorder.onerror = null;
-                    mediaRecorder.stop(); 
-                }
-
-                recordedChunks = [];
-                recordedBlob = null; 
-                totalRecordedTime = 0;
-                segmentDurations = [];
-                isRecording = false;
-                
-                // Update UI to its initial state
-                updateTimerText(0);
-                
-                // Reset progress ring visual
-                progressSegmentsContainer.innerHTML = ''; // Clear completed segments
-                activeProgressSegment.style.strokeDashoffset = circumference;
-                
-                nextButton.disabled = true;
-                restartButton.disabled = true;
-
-                recordButton.classList.remove('is-recording', 'is-paused');
-                recordButtonIcon.classList.remove('fa-stop');
-                recordButtonIcon.classList.add('fa-video');
-                
-                updateFlipCameraButtonVisibility();
-                
-                // BUG FIX: Re-initialize the media recorder to allow recording again
-                initializeMediaRecorder();
-            }
-
-            function initializeMediaRecorder() {
-                if (!stream) return;
-
-                const options = [
-                    'video/mp4; codecs=avc1,mp4a.40.2',
-                    'video/webm; codecs=vp9,opus',
-                    'video/webm; codecs=vp8,opus',
-                    'video/webm'
-                ].find(type => MediaRecorder.isTypeSupported(type));
-
-                try {
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: options });
-                
-                    mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) {
-                            recordedChunks.push(event.data);
+                    listJson.items.forEach(item => {
+                        const v = videoDetailsMap.get(item.contentDetails.videoId);
+                        if (v) { // Check if video details were found (video might be deleted/private)
+                            GLOBAL_DATA.videos.push({
+                                id: v.id,
+                                title: v.snippet.title,
+                                channel: v.snippet.channelTitle,
+                                publishedAt: new Date(v.snippet.publishedAt),
+                                thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url,
+                                duration: parseISO8601(v.contentDetails.duration),
+                                views: parseInt(v.statistics.viewCount) || 0,
+                                likes: parseInt(v.statistics.likeCount) || 0,
+                                comments: parseInt(v.statistics.commentCount) || 0
+                            });
                         }
-                    };
-                    
-                    mediaRecorder.onstop = () => {
-                        if (recordedChunks.length === 0) {
-                            resetRecordingProgress();
-                            return;
-                        };
-
-                        const mimeType = recordedChunks[0].type || mediaRecorder.mimeType || 'video/mp4';
-                        recordedBlob = new Blob(recordedChunks, { type: mimeType });
-                        recordedVideo.src = URL.createObjectURL(recordedBlob);
-                        recordedVideo.muted = false;
-                        showView('preview');
-                    };
-                    
-                    mediaRecorder.onerror = (event) => {
-                        console.error('MediaRecorder error:', event.error);
-                        showToast('An error occurred during recording.');
-                    };
-                } catch (err) {
-                    console.error('Failed to create MediaRecorder:', err);
-                    showToast('This device may not be supported for recording.');
-                    mediaRecorder = null;
-                    showView('permissions');
-                }
-            }
-
-            // --- Recording Mode Logic ---
-            function setRecordingMode(mode) {
-                if (isRecording) return;
-                recordingMode = mode;
-                
-                const isHoldMode = mode === 'hold';
-                modeHoldButton.classList.toggle('text-blue-500', isHoldMode);
-                modeHoldButton.classList.toggle('ring-2', isHoldMode);
-                modeHoldButton.classList.toggle('ring-blue-500', isHoldMode);
-                modeHoldButton.classList.toggle('text-gray-500', !isHoldMode);
-                modeHoldButton.classList.toggle('dark:text-gray-400', !isHoldMode);
-
-                modeLockButton.classList.toggle('text-blue-500', !isHoldMode);
-                modeLockButton.classList.toggle('ring-2', !isHoldMode);
-                modeLockButton.classList.toggle('ring-blue-500', !isHoldMode);
-                modeLockButton.classList.toggle('text-gray-500', isHoldMode);
-                modeLockButton.classList.toggle('dark:text-gray-400', isHoldMode);
-                
-                recordInstructions.textContent = isHoldMode ? 'Hold to record, release to pause' : 'Tap to record, tap again to stop';
-                recordButtonIcon.classList.remove('fa-stop');
-                recordButtonIcon.classList.add('fa-video');
-            }
-            
-            function handleRecordPointerDown() {
-                if (recordingMode === 'hold') startRecording();
-            }
-            
-            function handleRecordPointerUp() {
-                if (recordingMode === 'hold') pauseRecording();
-            }
-            
-            function handleRecordClick() {
-                if (recordingMode === 'lock') toggleLockRecording();
-            }
-            
-            function toggleLockRecording() {
-                if (isRecording) {
-                    pauseRecording();
-                    recordButtonIcon.classList.replace('fa-stop', 'fa-video');
-                } else {
-                    startRecording();
-                    recordButtonIcon.classList.replace('fa-video', 'fa-stop');
-                }
-            }
-
-            // --- Recording functions ---
-            function startRecording() {
-                if (!mediaRecorder || totalRecordedTime >= MAX_DURATION || isRecording) return;
-                
-                isRecording = true;
-                flipCameraButton.disabled = true;
-                restartButton.disabled = true;
-                
-                if (mediaRecorder.state === 'inactive') mediaRecorder.start(100);
-                else if (mediaRecorder.state === 'paused') mediaRecorder.resume();
-
-                // Set color and starting offset for the new active segment
-                activeProgressSegment.style.stroke = blueShades[segmentDurations.length % blueShades.length];
-                activeProgressSegment.style.strokeDashoffset = circumference * (1 - totalRecordedTime / MAX_DURATION);
-                activeProgressSegment.setAttribute('stroke-dasharray', circumference);
-
-                recordButton.classList.remove('is-paused');
-                recordButton.classList.add('is-recording');
-                nextButton.disabled = true;
-                
-                chunkStartTime = Date.now();
-                
-                clearInterval(recordingInterval);
-                recordingInterval = setInterval(updateProgress, 50);
-            }
-
-            function pauseRecording() {
-                if (!mediaRecorder || mediaRecorder.state !== 'recording' || !isRecording) return;
-                
-                isRecording = false;
-                mediaRecorder.pause();
-                recordButton.classList.remove('is-recording');
-                
-                const chunkDuration = Date.now() - chunkStartTime;
-                const oldTotalRecordedTime = totalRecordedTime;
-                totalRecordedTime += chunkDuration;
-                segmentDurations.push(chunkDuration);
-                
-                clearInterval(recordingInterval);
-                
-                // Create and append a finalized circle for the segment just recorded
-                const segmentCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                segmentCircle.setAttribute('class', 'progress-ring__circle');
-                segmentCircle.setAttribute('stroke-width', '8');
-                segmentCircle.setAttribute('fill', 'transparent');
-                segmentCircle.setAttribute('r', '46');
-                segmentCircle.setAttribute('cx', '50');
-                segmentCircle.setAttribute('cy', '50');
-                segmentCircle.style.stroke = blueShades[(segmentDurations.length - 1) % blueShades.length];
-
-                const segmentStartPercent = oldTotalRecordedTime / MAX_DURATION;
-                const segmentPercent = chunkDuration / MAX_DURATION;
-                const dash = segmentPercent * circumference;
-                const gap = (1 - segmentPercent) * circumference;
-                segmentCircle.setAttribute('stroke-dasharray', `${dash} ${gap}`);
-                segmentCircle.setAttribute('stroke-dashoffset', circumference * (1 - segmentStartPercent));
-                progressSegmentsContainer.appendChild(segmentCircle);
-
-                // Hide the active animator segment until next recording starts
-                activeProgressSegment.style.strokeDashoffset = circumference;
-                
-                if (totalRecordedTime > 0) {
-                    nextButton.disabled = false;
-                    restartButton.disabled = false;
-                    recordButton.classList.add('is-paused');
-                    flipCameraButton.disabled = true;
-                } else {
-                    updateFlipCameraButtonVisibility();
-                }
-                
-                updateTimerText(totalRecordedTime);
-            }
-
-            // Interval function to update progress
-            function updateProgress() {
-                const currentTimeInChunk = Date.now() - chunkStartTime;
-                const currentTotalTime = totalRecordedTime + currentTimeInChunk;
-                
-                if (currentTotalTime >= MAX_DURATION) {
-                    if (recordingMode === 'lock') toggleLockRecording();
-                    else pauseRecording();
-                    
-                    finishRecording();
-                } else {
-                    // Update progress ring visual
-                    const percent = currentTotalTime / MAX_DURATION;
-                    activeProgressSegment.style.strokeDashoffset = circumference * (1 - percent);
-                    updateTimerText(currentTotalTime);
-                }
-            }
-
-            // Update timer text
-            function updateTimerText(time) {
-                const timeToDisplay = time !== undefined ? time : totalRecordedTime;
-                const seconds = (timeToDisplay / 1000).toFixed(1);
-                timerText.textContent = `${seconds}s`;
-            }
-            
-            function finishRecording() {
-                clearInterval(recordingInterval);
-                isRecording = false;
-                
-                recordButton.classList.remove('is-recording', 'is-paused');
-                nextButton.disabled = true;
-                restartButton.disabled = true;
-                recordButtonIcon.classList.replace('fa-stop', 'fa-video');
-
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                } else if (recordedChunks.length > 0) {
-                    mediaRecorder.onstop();
-                } else {
-                    showToast("Hold the record button to capture video first!");
-                    nextButton.disabled = (totalRecordedTime === 0);
-                }
-                stopCurrentStream();
-            }
-            
-            // --- Video Player Logic ---
-            function setupVideoPlayer(container, video, bigPlayBtn, playPauseBtn, playPauseIcon, progressContainer, progressBar, muteBtn, muteIcon) {
-                const togglePlay = () => video.paused ? video.play() : video.pause();
-                const toggleMute = () => video.muted = !video.muted;
-                
-                video.addEventListener('play', () => {
-                    playPauseIcon.classList.replace('fa-play', 'fa-pause');
-                    container.classList.remove('paused');
-                });
-                
-                video.addEventListener('pause', () => {
-                    playPauseIcon.classList.replace('fa-pause', 'fa-play');
-                    container.classList.add('paused');
-                });
-                
-                video.addEventListener('volumechange', () => {
-                    muteIcon.classList.toggle('fa-volume-high', !video.muted);
-                    muteIcon.classList.toggle('fa-volume-xmark', video.muted);
-                });
-                
-                video.addEventListener('timeupdate', () => {
-                    if (video.duration) {
-                        progressBar.style.width = `${(video.currentTime / video.duration) * 100}%`;
-                    }
-                });
-                
-                progressContainer.addEventListener('click', (e) => {
-                    if (video.duration) {
-                        const rect = progressContainer.getBoundingClientRect();
-                        video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration;
-                    }
-                });
-                
-                playPauseBtn.addEventListener('click', togglePlay);
-                bigPlayBtn.addEventListener('click', togglePlay);
-                muteBtn.addEventListener('click', toggleMute);
-                video.addEventListener('click', togglePlay);
-            }
-            
-            // --- Library (IndexedDB) Functions ---
-            function initDB() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(DB_NAME, DB_VERSION);
-                    request.onupgradeneeded = e => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains(STORE_NAME)) {
-                            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                        }
-                    };
-                    request.onsuccess = e => { db = e.target.result; resolve(); };
-                    request.onerror = e => reject(e.target.error);
-                });
-            }
-            
-            function generateThumbnail(blob) {
-                return new Promise((resolve, reject) => {
-                    const video = document.createElement('video');
-                    const videoUrl = URL.createObjectURL(blob);
-                    video.src = videoUrl;
-                    video.muted = true;
-                    video.onloadeddata = () => video.currentTime = 0.1;
-                    video.onseeked = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                        URL.revokeObjectURL(videoUrl); // Clean up the object URL
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
-                    };
-                    video.onerror = (err) => {
-                         URL.revokeObjectURL(videoUrl); // Clean up on error
-                         reject('Error generating thumbnail');
-                    }
-                });
-            }
-            
-            async function saveVideoToLibrary(blob) {
-                if (!db) return showToast("Library is not available.");
-                try {
-                    // FIX: Generate the thumbnail BEFORE starting the transaction.
-                    // This prevents the transaction from closing while we wait for the async thumbnail generation.
-                    const thumbnail = await generateThumbnail(blob);
-                    
-                    // Now that we have the thumbnail, we can start the transaction.
-                    const transaction = db.transaction([STORE_NAME], 'readwrite');
-                    const objectStore = transaction.objectStore(STORE_NAME);
-                    
-                    const request = objectStore.add({
-                        blob: blob,
-                        date: new Date().toISOString(),
-                        thumbnail: thumbnail
                     });
 
-                    request.onsuccess = () => {
-                        console.log('Video added to library successfully');
-                        if (currentView === 'library') {
-                            loadLibrary(); // Refresh library view if it's open
-                        }
-                    };
+                    nextToken = listJson.nextPageToken;
+                    if(!nextToken) hasMore = false;
+                    page++;
+                }
 
-                    request.onerror = (event) => {
-                        console.error('Failed to add video to object store:', event.target.error);
-                        showToast('Error: Could not save video to library.');
-                    };
+                if(GLOBAL_DATA.videos.length === 0) throw new Error("No accessible videos found in this playlist.");
+                
+                lastFetchSuccess = true;
+                processData();
+                renderUI();
 
-                } catch (error) {
-                    console.error('Error during saveVideoToLibrary process:', error);
-                    showToast('Could not create video thumbnail to save.');
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                $('loadingBox').classList.add('hidden');
+                $('analyzeBtn').disabled = false;
+                $('analyzeBtn').innerHTML = `<span>Analyze</span> <i class="fas fa-bolt"></i>`; // Restore button text
+                if (lastFetchSuccess) {
+                    $('errorBox').classList.add('hidden'); // Hide error if last fetch was OK
                 }
             }
+        }
+
+        function updateStatus(msg) {
+            $('loadingStatus').innerText = msg;
+        }
+
+        function showError(msg) {
+            $('errorText').innerText = `Error: ${msg}. Check console for details. If using the demo key, the quota may be exhausted.`;
+            $('errorBox').classList.remove('hidden');
+            $('loadingBox').classList.add('hidden');
+            $('analyzeBtn').disabled = false;
+            $('analyzeBtn').innerHTML = `<span>Analyze</span> <i class="fas fa-bolt"></i>`;
+        }
+
+        // --- PROCESSING & RENDERING ---
+        function processData() {
+            GLOBAL_DATA.totalDuration = GLOBAL_DATA.videos.reduce((acc, v) => acc + v.duration, 0);
+            GLOBAL_DATA.totalViews = GLOBAL_DATA.videos.reduce((acc, v) => acc + v.views, 0);
+            GLOBAL_DATA.totalLikes = GLOBAL_DATA.videos.reduce((acc, v) => acc + v.likes, 0);
+            GLOBAL_DATA.totalComments = GLOBAL_DATA.videos.reduce((acc, v) => acc + v.comments, 0);
+        }
+
+        function renderUI() {
+            const data = GLOBAL_DATA;
+            const count = data.videos.length;
+
+            // Header
+            $('headerTitle').innerText = data.meta.title;
+            $('headerChannel').innerText = data.meta.channel;
+            $('headerThumb').src = data.meta.thumb;
+            $('headerLink').href = `https://www.youtube.com/playlist?list=${data.meta.id}`;
+            $('headerCount').innerText = `${count} videos`;
+            $('headerPrivacy').innerText = data.meta.privacy;
+
+            // Overview Stats
+            $('ovDuration').innerText = secondsToText(data.totalDuration, true);
+            $('ovAvgDuration').innerText = "Avg: " + secondsToText(data.totalDuration/count, true);
             
-            function loadLibrary() {
-                if (!db) return showToast("Library is not available.");
-                const request = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
-                request.onsuccess = e => {
-                    const videos = e.target.result.reverse();
-                    libraryGrid.innerHTML = '';
-                    const isEmpty = videos.length === 0;
-                    libraryEmptyState.classList.toggle('hidden', !isEmpty);
-                    libraryGrid.classList.toggle('hidden', isEmpty);
-                    if (!isEmpty) {
-                        videos.forEach(video => libraryGrid.appendChild(createLibraryItem(video)));
+            $('ovViews').innerText = formatCompact(data.totalViews);
+            $('ovAvgViews').innerText = "Avg: " + formatCompact(data.totalViews/count);
+
+            $('ovLikes').innerText = formatCompact(data.totalLikes);
+            const eng = data.totalViews > 0 ? ((data.totalLikes + data.totalComments) / data.totalViews * 100).toFixed(2) : 0;
+            $('ovEngagement').innerText = `${eng}% Engagement`;
+            $('ovComments').innerText = formatCompact(data.totalComments);
+
+            // Speed Matrix
+            $('speed100').innerText = secondsToText(data.totalDuration);
+            $('speed125').innerText = secondsToText(data.totalDuration / 1.25);
+            $('speed150').innerText = secondsToText(data.totalDuration / 1.5);
+            $('speed175').innerText = secondsToText(data.totalDuration / 1.75);
+            $('speed200').innerText = secondsToText(data.totalDuration / 2);
+
+            // Spotlight Cards
+            const sortedByViews = [...data.videos].sort((a,b) => b.views - a.views);
+            const sortedByDate = [...data.videos].sort((a,b) => a.publishedAt - b.publishedAt);
+            const sortedByDur = [...data.videos].sort((a,b) => b.duration - a.duration);
+
+            renderSpotlight('cardPopular', sortedByViews[0], 'Most Popular', 'fas fa-fire text-orange-500', v => `${formatCompact(v.views)} views`);
+            renderSpotlight('cardOldest', sortedByDate[0], 'Oldest Video', 'fas fa-history text-blue-500', v => v.publishedAt.toLocaleDateString());
+            renderSpotlight('cardLongest', sortedByDur[0], 'Longest Video', 'fas fa-hourglass-half text-purple-500', v => secondsToText(v.duration));
+
+            // Populate Table
+            populateTable(data.videos);
+
+            // Keywords
+            generateKeywords();
+
+            // Show Dashboard
+            $('dashboard').classList.remove('hidden');
+            switchTab('overview'); // Set default tab
+        }
+
+        function renderSpotlight(elementId, video, label, iconClass, subtextFn) {
+            if (!video) {
+                $(elementId).innerHTML = `<div class="text-slate-500">N/A</div>`;
+                return;
+            }
+            $(elementId).innerHTML = `
+                <div class="w-16 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-slate-900">
+                    <img src="${video.thumb}" class="w-full h-full object-cover opacity-90">
+                </div>
+                <div class="min-w-0">
+                    <div class="text-xs text-slate-400 font-bold uppercase mb-0.5"><i class="${iconClass} mr-1"></i> ${label}</div>
+                    <div class="text-sm font-semibold text-white truncate" title="${video.title}">${video.title}</div>
+                    <div class="text-xs text-slate-500">${subtextFn(video)}</div>
+                </div>
+            `;
+        }
+
+        // --- CHARTS & ANALYTICS ---
+        function renderCharts() {
+            // Destroy existing if re-rendering
+            if(charts.views) charts.views.destroy();
+            if(charts.years) charts.years.destroy();
+
+            // Chart.js global defaults
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.borderColor = '#334155';
+            
+            // 1. Top 10 Videos by Views
+            const topVideos = [...GLOBAL_DATA.videos].sort((a,b) => b.views - a.views).slice(0, 10).reverse();
+            
+            const ctxViews = $('chartViews').getContext('2d');
+            charts.views = new Chart(ctxViews, {
+                type: 'bar',
+                data: {
+                    labels: topVideos.map(v => v.title.substring(0, 20) + '...'),
+                    datasets: [{
+                        label: 'Views',
+                        data: topVideos.map(v => v.views),
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bar chart
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { grid: { display: false } }, 
+                        x: { grid: { color: '#334155' }, ticks: { callback: (v) => formatCompact(v) } } 
                     }
-                };
-            }
-            
-            function createLibraryItem(videoRecord) {
-                const item = document.createElement('div');
-                item.className = 'library-item';
-                const dateString = new Date(videoRecord.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                }
+            });
 
-                item.innerHTML = `
-                    <img src="${videoRecord.thumbnail}" class="library-item-thumbnail" alt="Video thumbnail">
-                    <span class="library-item-date">${dateString}</span>
-                    <button class="library-item-delete" data-id="${videoRecord.id}"><i class="fas fa-times"></i></button>
-                `;
-                
-                item.addEventListener('click', e => {
-                    if (!e.target.closest('.library-item-delete')) openLibraryPlayer(videoRecord.blob);
+            // 2. Uploads by Year
+            const years = {};
+            GLOBAL_DATA.videos.forEach(v => {
+                const y = v.publishedAt.getFullYear();
+                years[y] = (years[y] || 0) + 1;
+            });
+            
+            const ctxYears = $('chartYears').getContext('2d');
+            charts.years = new Chart(ctxYears, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(years).sort(),
+                    datasets: [{
+                        label: 'Videos Uploaded',
+                        data: Object.keys(years).sort().map(y => years[y]),
+                        borderColor: '#3b82f6',
+                        tension: 0.3,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { grid: { color: '#334155' }, beginAtZero: true }, 
+                        x: { grid: { color: '#334155' } } 
+                    }
+                }
+            });
+        }
+
+        function generateKeywords() {
+            const stopWords = new Set(['the','and','a','in','to','for','of','on','with','is','at','that','this','it','com','how','what','why','tutorial','playlist','part','official','feat','full','video','new','best','top']);
+            const counts = {};
+            GLOBAL_DATA.videos.forEach(v => {
+                const words = v.title.toLowerCase().replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ').split(' ');
+                words.forEach(w => {
+                    if(w.length > 2 && !stopWords.has(w) && isNaN(w)) {
+                        counts[w] = (counts[w] || 0) + 1;
+                    }
                 });
-                item.querySelector('.library-item-delete').addEventListener('click', () => deleteVideoFromLibrary(videoRecord.id));
-                return item;
+            });
+
+            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 20);
+            if (!sorted.length) {
+                $('keywordCloud').innerHTML = `<span class="text-slate-500">No common keywords found.</span>`;
+                return;
+            }
+            const html = sorted.map(([word, count]) => `
+                <span class="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-300 border border-slate-700 shadow-sm">
+                    ${word} <span class="text-red-500 ml-1 font-mono">${count}</span>
+                </span>
+            `).join('');
+            $('keywordCloud').innerHTML = html;
+        }
+
+        // --- BINGE PLANNER ---
+        function calculatePlan() {
+            const speed = parseFloat($('customSelect').dataset.value || 1);
+            const hoursPerDay = parseFloat($('planDaily').value);
+            
+            if(!hoursPerDay || hoursPerDay <= 0) {
+                $('planDays').innerText = '-';
+                $('planDate').innerText = '...';
+                return;
             }
 
-            function deleteVideoFromLibrary(id) {
-                if (!db) return showToast("Library is not available.");
-                const request = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).delete(id);
-                request.onsuccess = () => {
-                    showToast('Video deleted.');
-                    loadLibrary();
-                };
-                request.onerror = () => showToast('Could not delete video.');
-            }
+            const totalHoursNeeded = (GLOBAL_DATA.totalDuration / speed) / 3600;
+            const daysNeeded = Math.ceil(totalHoursNeeded / hoursPerDay);
             
-            function openLibraryPlayer(blob) {
-                libraryModalBlob = blob;
-                libraryVideoPlayer.src = URL.createObjectURL(blob);
-                libraryVideoPlayer.muted = false;
-                libraryModal.classList.remove('hidden');
-                libraryVideoPlayer.play().catch(e => console.error("Autoplay failed:", e));
-            }
+            $('planDays').innerText = daysNeeded;
             
-            function closeLibraryPlayer() {
-                libraryVideoPlayer.pause();
-                if (libraryVideoPlayer.src) URL.revokeObjectURL(libraryVideoPlayer.src);
-                libraryVideoPlayer.src = '';
-                libraryModal.classList.add('hidden');
-                libraryModalBlob = null;
-            }
+            const finishDate = new Date();
+            finishDate.setDate(finishDate.getDate() + daysNeeded);
+            $('planDate').innerText = finishDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+        }
 
-            // --- Download & Share Flow ---
-            function downloadAndSaveToLibrary() {
-                if (!recordedBlob) return showToast("No video to download.");
-                downloadVideo(recordedBlob);
-                saveVideoToLibrary(recordedBlob);
-                downloadModal.classList.remove('hidden');
+        // --- TABLE & FILTERING ---
+        let currentSort = { col: 'none', asc: false };
+
+        function populateTable(videos) {
+            const tbody = $('videoTableBody');
+            tbody.innerHTML = '';
+            
+            videos.forEach((v, i) => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-800/50 transition border-b border-slate-700/50";
+                // Escape quotes for onclick function
+                const safeTitle = v.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeChannel = v.channel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-slate-500">${i+1}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${v.thumb}" class="w-10 h-10 rounded object-cover hidden sm:block bg-slate-800">
+                            <div class="min-w-0">
+                                <div class="text-white text-sm font-medium truncate" title="${v.title}">${v.title}</div>
+                                <div class="text-[10px] text-slate-500">${v.channel}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right font-mono text-slate-400">${secondsToText(v.duration)}</td>
+                    <td class="px-6 py-4 text-right text-slate-300">${formatCompact(v.views)}</td>
+                    <td class="px-6 py-4 text-right text-slate-300">
+                        <span class="mr-2"><i class="fas fa-thumbs-up text-[10px] text-slate-500"></i> ${formatCompact(v.likes)}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="openModal('${v.id}', '${safeTitle}', '${safeChannel}')" class="text-red-500 hover:text-red-400 transition transform hover:scale-110" title="Play Video">
+                            <i class="fas fa-play-circle text-lg"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterTable() {
+            const query = $('tableSearch').value.toLowerCase();
+            const filtered = GLOBAL_DATA.videos.filter(v => v.title.toLowerCase().includes(query) || v.channel.toLowerCase().includes(query));
+            populateTable(filtered);
+        }
+
+        function sortTable(col) {
+            // Update sort icons
+            document.querySelectorAll('th i.fa-sort').forEach(icon => icon.className = "fas fa-sort ml-1 opacity-50");
+            const icon = $(`th[onclick="sortTable('${col}')"] i`);
+
+            if(currentSort.col === col) {
+                currentSort.asc = !currentSort.asc;
+            } else { 
+                currentSort.col = col; 
+                currentSort.asc = true; 
             }
             
-            function downloadVideo(blob) {
-                if (!blob) return;
-                const filename = generateFilename(blob.type);
-                const videoURL = URL.createObjectURL(blob);
+            icon.className = `fas ${currentSort.asc ? 'fa-sort-up' : 'fa-sort-down'} ml-1 opacity-100`;
+
+            const filtered = GLOBAL_DATA.videos.filter(v => v.title.toLowerCase().includes($('tableSearch').value.toLowerCase()));
+
+            const sorted = [...filtered].sort((a,b) => {
+                let valA = col === 'title' ? a.title.toLowerCase() : a[col];
+                let valB = col === 'title' ? b.title.toLowerCase() : b[col];
                 
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = videoURL;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(videoURL);
-                }, 100);
-            }
+                if (valA < valB) return currentSort.asc ? -1 : 1;
+                if (valA > valB) return currentSort.asc ? 1 : -1;
+                return 0;
+            });
+            populateTable(sorted);
+        }
 
-            function generateFilename(mimeType) {
-                const timestamp = new Date().toISOString().replace('T', '_').replace(/:/g, '-').split('.')[0];
-                const extension = mimeType.includes('mp4') ? '.mp4' : '.webm';
-                return `Shortie_${timestamp}${extension}`;
+        function exportCSV() {
+            let csv = "Title,Channel,Duration(s),Views,Likes,Comments,URL\n";
+            GLOBAL_DATA.videos.forEach(v => {
+                const title = `"${v.title.replace(/"/g, '""')}"`;
+                csv += `${title},"${v.channel}",${v.duration},${v.views},${v.likes},${v.comments},https://youtu.be/${v.id}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${GLOBAL_DATA.meta.title.replace(/[^a-z0-9]/gi, '_')}_analysis.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- Modal Logic ---
+        function openModal(videoId, title, channel) {
+            const iframe = $('videoIframe');
+            const loader = $('iframeLoader');
+            
+            $('modalTitle').innerText = title;
+            $('modalChannel').innerText = channel;
+            
+            // Show loader, hide iframe
+            loader.classList.remove('hidden');
+            iframe.classList.add('opacity-0');
+            
+            iframe.onload = () => {
+                // Hide loader, show iframe
+                loader.classList.add('hidden');
+                iframe.classList.remove('opacity-0');
+            };
+            
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&hl=en`;
+            
+            document.body.classList.add('modal-open');
+        }
+
+        function closeModal() {
+            $('videoIframe').src = 'about:blank'; // Stop video
+            document.body.classList.remove('modal-open');
+        }
+
+        // --- Custom Select Logic ---
+        function setupCustomSelect() {
+            const select = $('customSelect');
+            const trigger = $('selectTrigger');
+            const valueSpan = $('selectValue');
+            const optionsPanel = $('selectOptions');
+            const options = document.querySelectorAll('.select-option');
+            const icon = trigger.querySelector('i');
+
+            const openSelect = () => {
+                optionsPanel.classList.remove('hidden', 'opacity-0', '-translate-y-2');
+                icon.classList.add('rotate-180');
             }
             
-            // --- Start the app ---
-            init();
+            const closeSelect = () => {
+                optionsPanel.classList.add('opacity-0', '-translate-y-2');
+                icon.classList.remove('rotate-180');
+                // Allow animation to finish before hiding
+                setTimeout(() => optionsPanel.classList.add('hidden'), 200);
+            }
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (optionsPanel.classList.contains('hidden')) {
+                    openSelect();
+                } else {
+                    closeSelect();
+                }
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    const newValue = e.currentTarget.dataset.value;
+                    const newText = e.currentTarget.innerText;
+                    
+                    select.dataset.value = newValue;
+                    valueSpan.innerText = newText;
+                    closeSelect();
+                    calculatePlan(); // Recalculate on change
+                });
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!select.contains(e.target)) {
+                    closeSelect();
+                }
+            });
+        }
+        
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCustomSelect();
         });
-    </script>
 
+    </script>
 </body>
 </html>
