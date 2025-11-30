@@ -70,11 +70,12 @@
         body.modal-open #videoModal { opacity: 1; pointer-events: auto; }
         body.modal-open #modalContent { opacity: 1; transform: translateY(0) scale(1); }
         
-        #customControls {
+        #customControls, #customTopBar {
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-        #iframeWrapper:hover #customControls, #iframeWrapper.paused #customControls {
+        #iframeWrapper:hover #customControls, #iframeWrapper.paused #customControls,
+        #iframeWrapper:hover #customTopBar, #iframeWrapper.paused #customTopBar {
             opacity: 1;
         }
 
@@ -135,7 +136,7 @@
             <h1 class="text-2xl font-bold text-white tracking-tight">Ultimate<span class="text-red-500">Analyst</span></h1>
         </div>
         <div class="text-xs text-slate-500 font-mono bg-[#1f1f1f] px-3 py-1.5 rounded-full border border-slate-700">
-            v4.2.1 • Player Bugfix
+            v4.3.0 • Player UI Update
         </div>
     </header>
 
@@ -474,6 +475,15 @@
             <div id="iframeWrapper" class="relative w-full bg-black rounded-xl overflow-hidden aspect-video">
                 <div id="videoIframe"></div> <!-- YouTube player will be injected here -->
                 
+                 <!-- Custom Top Bar -->
+                <div id="customTopBar" class="absolute top-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-b from-black/70 to-transparent text-white flex items-center gap-3 pointer-events-none">
+                    <img id="modalChannelThumb" src="https://placehold.co/40x40/1f2937/475569?text=?" class="w-10 h-10 rounded-full bg-slate-700 flex-shrink-0">
+                    <div class="min-w-0">
+                        <h3 id="modalVideoTitle" class="font-semibold truncate">Video Title</h3>
+                        <p id="modalChannelName" class="text-sm text-slate-300 truncate">Channel Name</p>
+                    </div>
+                </div>
+
                 <!-- Custom Controls Overlay -->
                 <div id="customControls" class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/70 to-transparent">
                     <!-- Seeker -->
@@ -518,7 +528,8 @@
         // --- STATE MANAGEMENT ---
         let GLOBAL_DATA = {
             meta: {},
-            videos: [], // {id, title, views, duration, likes, comments, publishedAt, channel, thumb, favorites}
+            videos: [], // {id, title, views, etc...}
+            currentSingleVideo: {}, // Stores data for the single video being viewed
             totalDuration: 0,
             analysisMode: 'playlist' // 'playlist' or 'video'
         };
@@ -606,6 +617,8 @@
         async function startAnalysis() {
             // UI Reset
             lastFetchSuccess = false;
+            GLOBAL_DATA.videos = [];
+            GLOBAL_DATA.currentSingleVideo = {};
             $('errorBox').classList.add('hidden');
             $('dashboard').classList.add('hidden');
             $('singleVideoDashboard').classList.add('hidden');
@@ -630,7 +643,7 @@
         }
 
         async function analyzePlaylist() {
-             $('loadingTitle').innerText = "Analyzing Playlist";
+            $('loadingTitle').innerText = "Analyzing Playlist";
             const apiKey = getApiKey();
             const url = $('playlistInput').value;
             const regex = /[?&]list=([^#\&\?]+)/;
@@ -663,7 +676,7 @@
                     totalItems: plItem.contentDetails.itemCount
                 };
 
-                GLOBAL_DATA.videos = [];
+                let videoBuffer = [];
                 let nextToken = '';
                 let hasMore = true;
                 let page = 1;
@@ -679,36 +692,40 @@
                     const videoIds = listJson.items.map(i => i.contentDetails.videoId).filter(Boolean);
                     if (!videoIds.length) { hasMore = false; break; }
 
-                    updateStatus(`Fetching video details (${GLOBAL_DATA.videos.length + 1} - ${GLOBAL_DATA.videos.length + videoIds.length})...`);
+                    updateStatus(`Fetching video details (${videoBuffer.length + 1} - ${videoBuffer.length + videoIds.length})...`);
                     const vidRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics,snippet&id=${videoIds.join(',')}&key=${apiKey}`);
                     const vidJson = await vidRes.json();
-
-                    const videoDetailsMap = new Map(vidJson.items.map(v => [v.id, v]));
-
-                    listJson.items.forEach(item => {
-                        const v = videoDetailsMap.get(item.contentDetails.videoId);
-                        if (v) {
-                            GLOBAL_DATA.videos.push({
-                                id: v.id,
-                                title: v.snippet.title,
-                                channel: v.snippet.channelTitle,
-                                publishedAt: new Date(v.snippet.publishedAt),
-                                thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url,
-                                duration: parseISO8601(v.contentDetails.duration),
-                                views: parseInt(v.statistics.viewCount) || 0,
-                                likes: parseInt(v.statistics.likeCount) || 0,
-                                comments: parseInt(v.statistics.commentCount) || 0,
-                                favorites: parseInt(v.statistics.favoriteCount) || 0
-                            });
-                        }
-                    });
+                    vidJson.items.forEach(v => videoBuffer.push(v));
 
                     nextToken = listJson.nextPageToken;
                     if(!nextToken) hasMore = false;
                     page++;
                 }
 
-                if(GLOBAL_DATA.videos.length === 0) throw new Error("No accessible videos found in this playlist.");
+                if(videoBuffer.length === 0) throw new Error("No accessible videos found in this playlist.");
+                
+                // Fetch Channel Thumbs
+                updateStatus('Fetching channel details...');
+                const channelIds = [...new Set(videoBuffer.map(v => v.snippet.channelId))];
+                const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelIds.join(',')}&key=${apiKey}`);
+                const channelJson = await channelRes.json();
+                const channelMap = new Map(channelJson.items.map(c => [c.id, c.snippet.thumbnails.default.url]));
+
+                // Final processing
+                GLOBAL_DATA.videos = videoBuffer.map(v => ({
+                    id: v.id,
+                    title: v.snippet.title,
+                    channel: v.snippet.channelTitle,
+                    channelId: v.snippet.channelId,
+                    channelThumb: channelMap.get(v.snippet.channelId) || null,
+                    publishedAt: new Date(v.snippet.publishedAt),
+                    thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url,
+                    duration: parseISO8601(v.contentDetails.duration),
+                    views: parseInt(v.statistics.viewCount) || 0,
+                    likes: parseInt(v.statistics.likeCount) || 0,
+                    comments: parseInt(v.statistics.commentCount) || 0,
+                    favorites: parseInt(v.statistics.favoriteCount) || 0
+                }));
                 
                 lastFetchSuccess = true;
                 processData();
@@ -743,8 +760,23 @@
                 if (json.error) throw new Error(json.error.message);
                 if (!json.items || json.items.length === 0) throw new Error("Video not found or is private.");
                 
+                const videoData = json.items[0];
+                updateStatus("Fetching channel details...");
+                const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${videoData.snippet.channelId}&key=${apiKey}`);
+                const channelJson = await channelRes.json();
+                const channelThumb = channelJson.items?.[0]?.snippet?.thumbnails?.default?.url || null;
+
+                // Store in dedicated single video object
+                GLOBAL_DATA.currentSingleVideo = {
+                    id: videoData.id,
+                    title: videoData.snippet.title,
+                    channel: videoData.snippet.channelTitle,
+                    channelThumb: channelThumb,
+                    //... add other properties if needed by modal
+                };
+
                 lastFetchSuccess = true;
-                renderSingleVideoUI(json.items[0]);
+                renderSingleVideoUI(videoData);
 
             } catch(err) {
                 showError(err.message);
@@ -1080,7 +1112,6 @@
 
         function sortTable(col) {
             document.querySelectorAll('th i.fa-sort').forEach(icon => icon.className = "fas fa-sort ml-1 opacity-50");
-            // **FIXED**: Used document.querySelector because the selector is complex
             const icon = document.querySelector(`th[onclick="sortTable('${col}')"] i`);
 
             if(currentSort.col === col) {
@@ -1127,13 +1158,24 @@
         }
 
         function openModal(videoId) {
-            // **FIXED**: Added a user-facing alert and more descriptive error
-            // if the player API isn't ready, instead of failing silently.
             if (!playerReady) {
                 alert("The YouTube player is still loading. Please wait a moment and try again.");
                 console.error("YouTube Iframe API is not ready yet (onYouTubeIframeAPIReady has not fired).");
                 return;
             }
+
+            // Find video data
+            let videoData = GLOBAL_DATA.videos.find(v => v.id === videoId);
+            if (!videoData) { // Fallback for single video mode
+                videoData = GLOBAL_DATA.currentSingleVideo;
+            }
+
+            if (videoData) {
+                $('modalVideoTitle').innerText = videoData.title || 'Loading...';
+                $('modalChannelName').innerText = videoData.channel || '...';
+                $('modalChannelThumb').src = videoData.channelThumb || 'https://placehold.co/40x40/1f2937/475569?text=?';
+            }
+
             document.body.classList.add('modal-open');
 
             if (player) {
