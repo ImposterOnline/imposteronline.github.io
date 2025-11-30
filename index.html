@@ -12,20 +12,20 @@
         
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #0F0F0F; /* YouTube Dark BG */
+            background-color: #121212;
             color: #cbd5e1; 
-            background-image: radial-gradient(circle at 20% 20%, rgba(255,0,0,0.08), transparent 30%), radial-gradient(circle at 80% 90%, rgba(255,0,0,0.08), transparent 30%);
+            background-image: radial-gradient(circle at 15% 15%, rgba(255,0,0,0.08), transparent 35%), radial-gradient(circle at 85% 95%, rgba(255,0,0,0.08), transparent 35%);
         }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6a6a6a; }
 
         .glass-panel {
-            background: rgba(40, 40, 40, 0.6);
+            background: rgba(28, 28, 28, 0.6);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -64,20 +64,20 @@
         .fade-in-fast { animation: fadeInFast 0.3s ease-out; }
         @keyframes fadeInFast { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        .fade-out-fast { animation: fadeOutFast 0.3s ease-in forwards; }
-        @keyframes fadeOutFast { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
-
-        /* --- Custom Dropdown Select --- */
-        .select-options {
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-
-        /* --- Video Modal --- */
+        /* --- Video Modal & Custom Player --- */
         #videoModal { transition: opacity 0.3s ease-in-out; }
         #modalContent { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         body.modal-open #videoModal { opacity: 1; pointer-events: auto; }
         body.modal-open #modalContent { opacity: 1; transform: translateY(0) scale(1); }
         
+        #customControls {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #iframeWrapper:hover #customControls, #iframeWrapper.paused #customControls {
+            opacity: 1;
+        }
+
         /* Custom Seeker UI */
         #seekerContainer {
             --seeker-handle-size: 14px;
@@ -92,48 +92,38 @@
             background-color: rgba(255,255,255,0.2);
             border-radius: 2px;
             position: relative;
+            transition: height 0.2s ease;
         }
         #seekerProgress, #seekerBuffer {
             position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            border-radius: 2px;
-            pointer-events: none;
+            top: 0; left: 0; height: 100%;
+            border-radius: 2px; pointer-events: none;
         }
-        #seekerProgress {
-            background-color: #ef4444;
-            z-index: 2;
-        }
-        #seekerBuffer {
-            background-color: rgba(255,255,255,0.4);
-            z-index: 1;
-            transition: width 0.2s linear;
-        }
+        #seekerProgress { background-color: #ef4444; z-index: 2; }
+        #seekerBuffer { background-color: rgba(255,255,255,0.4); z-index: 1; transition: width 0.2s linear; }
         #seekerHandle {
             position: absolute;
             top: 50%;
             transform: translateY(-50%) translateX(-50%);
             width: var(--seeker-handle-size);
             height: var(--seeker-handle-size);
-            background-color: white;
-            border-radius: 50%;
-            z-index: 3;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            pointer-events: none;
+            background-color: white; border-radius: 50%;
+            z-index: 3; opacity: 0;
+            transition: opacity 0.2s ease; pointer-events: none;
         }
-        #seekerContainer:hover #seekerHandle, body.seeking #seekerHandle {
-            opacity: 1;
-        }
-        #seekerContainer:hover #seekerTrack, body.seeking #seekerTrack {
-             height: 6px;
-        }
+        #seekerContainer:hover #seekerHandle, body.seeking #seekerHandle { opacity: 1; }
+        #seekerContainer:hover #seekerTrack { height: 6px; }
 
+        /* Volume Slider */
+        #volumeSliderContainer { width: 0; transition: width 0.3s ease; overflow: hidden; }
+        #volumeBtn:hover + #volumeSliderContainer, #volumeSliderContainer:hover { width: 80px; }
+        input[type=range].volume-slider { -webkit-appearance: none; background: transparent; cursor: pointer; }
+        input[type=range].volume-slider::-webkit-slider-runnable-track { height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+        input[type=range].volume-slider::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -5px; height: 14px; width: 14px; border-radius: 50%; background: white; }
 
     </style>
 </head>
-<body class="min-h-screen flex flex-col p-2 sm:p-6">
+<body class="min-h-screen flex flex-col p-2 sm:p-6 lg:p-8">
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <!-- Navbar / Header -->
@@ -144,8 +134,8 @@
             </div>
             <h1 class="text-2xl font-bold text-white tracking-tight">Ultimate<span class="text-red-500">Analyst</span></h1>
         </div>
-        <div class="text-xs text-slate-500 font-mono bg-[#282828] px-3 py-1 rounded-full border border-slate-700">
-            v4.1.0 • Draggable Seeker & More Stats
+        <div class="text-xs text-slate-500 font-mono bg-[#1f1f1f] px-3 py-1.5 rounded-full border border-slate-700">
+            v4.2.0 • Revamped UI & Custom Player
         </div>
     </header>
 
@@ -155,11 +145,11 @@
         <div class="glass-panel p-6 rounded-2xl relative z-20">
             <!-- Mode Toggle -->
             <div class="flex justify-center mb-4">
-                <div class="bg-slate-900/80 border border-slate-700 rounded-full p-1 flex items-center text-sm">
-                    <button id="modeBtnPlaylist" onclick="switchMode('playlist')" class="px-4 py-1.5 rounded-full bg-red-600 text-white font-semibold">
+                <div class="bg-[#111] border border-slate-700 rounded-full p-1 flex items-center text-sm">
+                    <button id="modeBtnPlaylist" onclick="switchMode('playlist')" class="px-4 py-1.5 rounded-full bg-red-600 text-white font-semibold transition-all">
                         <i class="fas fa-list-ol mr-2"></i>Playlist
                     </button>
-                    <button id="modeBtnVideo" onclick="switchMode('video')" class="px-4 py-1.5 rounded-full text-slate-400 font-semibold">
+                    <button id="modeBtnVideo" onclick="switchMode('video')" class="px-4 py-1.5 rounded-full text-slate-400 font-semibold transition-all">
                          <i class="fab fa-youtube mr-2"></i>Single Video
                     </button>
                 </div>
@@ -171,20 +161,20 @@
                         <i class="fas fa-link text-slate-500 group-focus-within:text-red-500"></i>
                     </div>
                     <input type="text" id="playlistInput" 
-                        class="w-full bg-slate-900/80 border border-slate-700 text-white text-sm rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent block pl-11 p-4 shadow-inner transition-all placeholder-slate-600" 
+                        class="w-full bg-[#111] border border-slate-700 text-white text-sm rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent block pl-11 p-4 shadow-inner transition-all placeholder-slate-600" 
                         placeholder="Paste YouTube Playlist URL (e.g., https://youtube.com/playlist?list=...)"
                     >
                     <input type="text" id="videoInput" 
-                        class="w-full bg-slate-900/80 border border-slate-700 text-white text-sm rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent block pl-11 p-4 shadow-inner transition-all placeholder-slate-600 hidden" 
+                        class="w-full bg-[#111] border border-slate-700 text-white text-sm rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent block pl-11 p-4 shadow-inner transition-all placeholder-slate-600 hidden" 
                         placeholder="Paste YouTube Video URL (e.g., https://www.youtube.com/watch?v=...)"
                     >
                 </div>
                 
                 <div class="flex gap-2">
-                    <button onclick="toggleSettings()" class="px-4 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-400 hover:text-white transition" title="API Settings">
+                    <button onclick="toggleSettings()" class="w-14 h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-400 hover:text-white transition" title="API Settings">
                         <i class="fas fa-cog"></i>
                     </button>
-                    <button onclick="startAnalysis()" id="analyzeBtn" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-red-900/20 transform transition active:scale-95 whitespace-nowrap flex items-center justify-center gap-2">
+                    <button onclick="startAnalysis()" id="analyzeBtn" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold h-14 px-8 rounded-xl shadow-lg shadow-red-900/20 transform transition active:scale-95 whitespace-nowrap flex items-center justify-center gap-2">
                         <span>Analyze</span> <i class="fas fa-bolt"></i>
                     </button>
                 </div>
@@ -253,63 +243,75 @@
             <div id="view-overview" class="space-y-6">
                 <!-- Stats Grid -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 rounded-xl border-t-4 border-red-500">
-                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Duration</div>
+                    <div class="glass-panel p-5 rounded-xl border-t-2 border-red-500">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-clock text-red-500"></i>
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Duration</div>
+                        </div>
                         <div class="text-2xl font-bold text-white" id="ovDuration">0h 0m</div>
-                        <div class="text-xs text-slate-400 mt-1" id="ovAvgDuration">Avg: 0m</div>
+                        <div class="text-xs text-slate-500 mt-1" id="ovAvgDuration">Avg: 0m</div>
                     </div>
-                    <div class="glass-panel p-5 rounded-xl border-t-4 border-blue-500">
-                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Views</div>
+                    <div class="glass-panel p-5 rounded-xl border-t-2 border-blue-500">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-eye text-blue-500"></i>
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Views</div>
+                        </div>
                         <div class="text-2xl font-bold text-white" id="ovViews">0</div>
-                        <div class="text-xs text-slate-400 mt-1" id="ovAvgViews">Avg: 0</div>
+                        <div class="text-xs text-slate-500 mt-1" id="ovAvgViews">Avg: 0</div>
                     </div>
-                    <div class="glass-panel p-5 rounded-xl border-t-4 border-green-500">
-                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Likes</div>
+                    <div class="glass-panel p-5 rounded-xl border-t-2 border-green-500">
+                         <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-thumbs-up text-green-500"></i>
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Likes</div>
+                        </div>
                         <div class="text-2xl font-bold text-white" id="ovLikes">0</div>
-                        <div class="text-xs text-slate-400 mt-1" id="ovEngagement">0% Rate</div>
+                        <div class="text-xs text-slate-500 mt-1" id="ovEngagement">0% Rate</div>
                     </div>
-                    <div class="glass-panel p-5 rounded-xl border-t-4 border-purple-500">
-                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Comments</div>
+                    <div class="glass-panel p-5 rounded-xl border-t-2 border-purple-500">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-comments text-purple-500"></i>
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Comments</div>
+                        </div>
                         <div class="text-2xl font-bold text-white" id="ovComments">0</div>
-                        <div class="text-xs text-slate-400 mt-1">Community Activity</div>
+                        <div class="text-xs text-slate-500 mt-1">Community Activity</div>
                     </div>
                 </div>
 
                 <!-- Speed Matrix -->
                 <div class="glass-panel p-6 rounded-xl">
-                    <h3 class="text-white font-semibold mb-4 flex items-center gap-2"><i class="fas fa-tachometer-alt text-yellow-500"></i> Speed Matrix</h3>
+                    <h3 class="text-white font-semibold mb-4 flex items-center gap-2"><i class="fas fa-tachometer-alt text-yellow-500"></i> Binge Speed Matrix</h3>
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div class="bg-slate-900/50 p-3 rounded-lg text-center">
-                            <div class="text-slate-500 text-xs mb-1">1.0x (Normal)</div>
-                            <div class="text-white font-mono" id="speed100">00:00:00</div>
+                            <div class="text-slate-400 text-xs mb-1">1.0x (Normal)</div>
+                            <div class="text-white font-mono text-lg" id="speed100">00:00:00</div>
                         </div>
                         <div class="bg-slate-900/50 p-3 rounded-lg text-center">
                             <div class="text-blue-400 text-xs mb-1">1.25x</div>
-                            <div class="text-white font-mono" id="speed125">00:00:00</div>
+                            <div class="text-white font-mono text-lg" id="speed125">00:00:00</div>
                         </div>
                         <div class="bg-slate-900/50 p-3 rounded-lg text-center">
                             <div class="text-green-400 text-xs mb-1">1.50x</div>
-                            <div class="text-white font-mono" id="speed150">00:00:00</div>
+                            <div class="text-white font-mono text-lg" id="speed150">00:00:00</div>
                         </div>
                         <div class="bg-slate-900/50 p-3 rounded-lg text-center">
                             <div class="text-yellow-400 text-xs mb-1">1.75x</div>
-                            <div class="text-white font-mono" id="speed175">00:00:00</div>
+                            <div class="text-white font-mono text-lg" id="speed175">00:00:00</div>
                         </div>
                         <div class="bg-slate-900/50 p-3 rounded-lg text-center border border-red-500/30">
                             <div class="text-red-400 text-xs mb-1">2.00x</div>
-                            <div class="text-white font-mono" id="speed200">00:00:00</div>
+                            <div class="text-white font-mono text-lg" id="speed200">00:00:00</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Superlatives -->
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="cardPopular" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition"></div>
-                    <div id="cardLiked" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition"></div>
-                    <div id="cardCommented" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition"></div>
-                    <div id="cardOldest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition"></div>
-                    <div id="cardNewest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition"></div>
-                    <div id="cardLongest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition"></div>
+                    <div id="cardPopular" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition-all duration-300"></div>
+                    <div id="cardLiked" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition-all duration-300"></div>
+                    <div id="cardCommented" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition-all duration-300"></div>
+                    <div id="cardOldest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition-all duration-300"></div>
+                    <div id="cardNewest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition-all duration-300"></div>
+                    <div id="cardLongest" class="glass-panel p-4 rounded-xl flex gap-4 items-center group hover:bg-slate-800/80 transition-all duration-300"></div>
                 </div>
             </div>
 
@@ -351,7 +353,7 @@
                                     <span id="selectValue">1.0x (Normal)</span>
                                     <i class="fas fa-chevron-down text-slate-500 transition-transform duration-200"></i>
                                 </button>
-                                <div id="selectOptions" class="absolute z-10 w-full mt-1 glass-panel rounded-lg shadow-lg overflow-hidden hidden opacity-0 transform -translate-y-2 select-options">
+                                <div id="selectOptions" class="absolute z-10 w-full mt-1 glass-panel rounded-lg shadow-lg overflow-hidden hidden opacity-0 transform -translate-y-2">
                                     <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1">1.0x (Normal)</div>
                                     <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1.25">1.25x</div>
                                     <div class="select-option p-3 text-sm hover:bg-red-500/20 cursor-pointer" data-value="1.5">1.50x</div>
@@ -413,7 +415,7 @@
         <div id="singleVideoDashboard" class="hidden space-y-6 fade-in">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2">
-                    <div class="relative aspect-video rounded-2xl overflow-hidden glass-panel mb-4 group">
+                    <div id="svPlayerWrapper" class="relative aspect-video rounded-2xl overflow-hidden glass-panel mb-4 group">
                         <img id="svThumb" src="https://placehold.co/1280x720/0F0F0F/475569?text=Video" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                              <button onclick="openModal($('svPlayButton').dataset.videoid)" id="svPlayButton" data-videoid="" class="text-white text-6xl hover:text-red-500 transition transform hover:scale-110" title="Play Video">
@@ -445,10 +447,6 @@
                         <div id="svComments" class="text-3xl font-bold text-white">0</div>
                     </div>
                     <div class="glass-panel p-5 rounded-xl">
-                        <div class="text-slate-400 text-sm mb-1 flex items-center gap-2"><i class="fas fa-star"></i> Favorites</div>
-                        <div id="svFavorites" class="text-3xl font-bold text-white">0</div>
-                    </div>
-                    <div class="glass-panel p-5 rounded-xl">
                         <div class="text-slate-400 text-sm mb-1 flex items-center gap-2"><i class="fas fa-chart-line"></i> Engagement Rate</div>
                         <div id="svEngagement" class="text-3xl font-bold text-green-400">0%</div>
                     </div>
@@ -472,32 +470,42 @@
     <!-- --- Video Modal --- -->
     <div id="videoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none" onclick="closeModal()">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-        <div id="modalContent" class="w-full max-w-4xl rounded-2xl p-2 sm:p-4 space-y-2 opacity-0 transform -translate-y-4 scale-95" onclick="event.stopPropagation()">
+        <div id="modalContent" class="w-full max-w-4xl rounded-2xl space-y-2 opacity-0 transform -translate-y-4 scale-95" onclick="event.stopPropagation()">
             <div id="iframeWrapper" class="relative w-full bg-black rounded-xl overflow-hidden aspect-video">
                 <div id="videoIframe"></div> <!-- YouTube player will be injected here -->
-            </div>
-            <!-- Custom Controls -->
-            <div class="px-2">
-                 <div id="seekerContainer">
-                    <div id="seekerTrack">
-                        <div id="seekerBuffer"></div>
-                        <div id="seekerProgress"></div>
-                        <div id="seekerHandle"></div>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-4">
-                        <button id="playPauseBtn" class="text-white text-2xl w-10 h-10 flex items-center justify-center"><i class="fas fa-play"></i></button>
-                        <div class="flex items-center gap-2 text-white font-mono text-sm">
-                            <span id="currentTime">0:00</span>
-                            <span>/</span>
-                            <span id="totalTime">0:00</span>
+                
+                <!-- Custom Controls Overlay -->
+                <div id="customControls" class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/70 to-transparent">
+                    <!-- Seeker -->
+                    <div id="seekerContainer">
+                        <div id="seekerTrack">
+                            <div id="seekerBuffer"></div>
+                            <div id="seekerProgress"></div>
+                            <div id="seekerHandle"></div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button id="modalClose" onclick="closeModal()" class="w-10 h-10 flex-shrink-0 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 transition">
-                            <i class="fas fa-times"></i>
-                        </button>
+                    <!-- Main Controls -->
+                    <div class="flex justify-between items-center text-white">
+                        <div class="flex items-center gap-4">
+                            <button id="playPauseBtn" class="text-2xl w-10 h-10 flex items-center justify-center"><i class="fas fa-play"></i></button>
+                            <div class="flex items-center gap-2">
+                                <button id="volumeBtn" class="text-lg w-8 h-10 flex items-center justify-center"><i class="fas fa-volume-high"></i></button>
+                                <div id="volumeSliderContainer">
+                                    <input type="range" min="0" max="100" value="100" id="volumeSlider" class="volume-slider">
+                                </div>
+                            </div>
+                            <div class="font-mono text-sm hidden sm:flex items-center gap-2">
+                                <span id="currentTime">0:00</span>
+                                <span>/</span>
+                                <span id="totalTime">0:00</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="fullscreenBtn" class="text-lg w-10 h-10 flex items-center justify-center"><i class="fas fa-expand"></i></button>
+                            <button onclick="closeModal()" class="w-10 h-10 flex-shrink-0 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -718,7 +726,6 @@
             const apiKey = getApiKey();
             const url = $('videoInput').value;
             
-            // Regex for various YouTube URL formats
             const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
             const match = url.match(regex);
             const videoId = match ? match[1] : null;
@@ -864,7 +871,6 @@
             const views = parseInt(stats.viewCount) || 0;
             const likes = parseInt(stats.likeCount) || 0;
             const comments = parseInt(stats.commentCount) || 0;
-            const favorites = parseInt(stats.favoriteCount) || 0;
             const engagement = views > 0 ? (((likes + comments) / views) * 100).toFixed(2) : 0;
             
             const thumbUrl = snippet.thumbnails.maxres?.url || snippet.thumbnails.standard?.url || snippet.thumbnails.high?.url || snippet.thumbnails.medium?.url;
@@ -880,7 +886,6 @@
             $('svViews').innerText = formatNum(views);
             $('svLikes').innerText = formatNum(likes);
             $('svComments').innerText = formatNum(comments);
-            $('svFavorites').innerText = formatNum(favorites);
             $('svEngagement').innerText = `${engagement}%`;
 
             const downloadBtn = $('svDownloadBtn');
@@ -907,10 +912,10 @@
             }
             $(elementId).innerHTML = `
                 <div class="w-20 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-slate-900">
-                    <img src="${video.thumb}" class="w-full h-full object-cover opacity-90">
+                    <img src="${video.thumb}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
                 </div>
                 <div class="min-w-0">
-                    <div class="text-xs text-slate-400 font-bold uppercase mb-0.5"><i class="${iconClass} mr-1"></i> ${label}</div>
+                    <div class="text-xs text-slate-400 font-bold uppercase mb-0.5 flex items-center gap-2"><i class="${iconClass}"></i> ${label}</div>
                     <div class="text-sm font-semibold text-white truncate" title="${video.title}">${video.title}</div>
                     <div class="text-xs text-slate-500">${subtextFn(video)}</div>
                 </div>
@@ -1039,7 +1044,7 @@
             
             videos.forEach((v, i) => {
                 const row = document.createElement('tr');
-                row.className = "hover:bg-slate-800/50 transition border-b border-slate-700/50";
+                row.className = "hover:bg-slate-800/50 transition border-b border-slate-800";
                 
                 row.innerHTML = `
                     <td class="px-6 py-4 font-mono text-slate-500">${i+1}</td>
@@ -1075,7 +1080,7 @@
 
         function sortTable(col) {
             document.querySelectorAll('th i.fa-sort').forEach(icon => icon.className = "fas fa-sort ml-1 opacity-50");
-            const icon = $(`th[onclick="sortTable('${col}')"] i`);
+            const icon = document.querySelector(`th[onclick="sortTable('${col}')"] i`);
 
             if(currentSort.col === col) {
                 currentSort.asc = !currentSort.asc;
@@ -1133,13 +1138,8 @@
                     width: '100%',
                     videoId: videoId,
                     playerVars: {
-                        'autoplay': 1,
-                        'controls': 0, // Hide default controls
-                        'rel': 0,
-                        'showinfo': 0,
-                        'modestbranding': 1,
-                        'iv_load_policy': 3,
-                        'playsinline': 1
+                        'autoplay': 1, 'controls': 0, 'rel': 0, 'showinfo': 0,
+                        'modestbranding': 1, 'iv_load_policy': 3, 'playsinline': 1
                     },
                     events: {
                         'onReady': onPlayerReady,
@@ -1152,17 +1152,22 @@
         function onPlayerReady(event) {
             event.target.playVideo();
             updateTimeDisplay();
+            $('volumeSlider').value = player.getVolume();
+            updateVolumeIcon();
         }
 
         function onPlayerStateChange(event) {
             const playPauseIcon = $('playPauseBtn').querySelector('i');
+            const wrapper = $('iframeWrapper');
             clearInterval(progressInterval);
             if (event.data == YT.PlayerState.PLAYING) {
                 playPauseIcon.className = 'fas fa-pause';
+                wrapper.classList.remove('paused');
                 progressInterval = setInterval(updateSeekerUI, 250);
-                 updateTimeDisplay();
+                updateTimeDisplay();
             } else {
                 playPauseIcon.className = 'fas fa-play';
+                wrapper.classList.add('paused');
             }
         }
         
@@ -1199,9 +1204,22 @@
              clearInterval(progressInterval);
         }
         
+        function updateVolumeIcon() {
+            const volume = player.getVolume();
+            const icon = $('volumeBtn').querySelector('i');
+            if (player.isMuted() || volume === 0) {
+                icon.className = 'fas fa-volume-xmark';
+            } else if (volume < 50) {
+                icon.className = 'fas fa-volume-low';
+            } else {
+                icon.className = 'fas fa-volume-high';
+            }
+        }
+        
         function setupPlayerControls() {
             let isSeeking = false;
             const seeker = $('seekerContainer');
+            const volumeSlider = $('volumeSlider');
 
             const performSeek = (e) => {
                 if (!player || typeof player.getDuration !== 'function' || player.getDuration() <= 0) return;
@@ -1220,33 +1238,44 @@
             };
 
             seeker.addEventListener('mousedown', (e) => {
-                isSeeking = true;
-                document.body.classList.add('seeking');
-                performSeek(e);
+                isSeeking = true; document.body.classList.add('seeking'); performSeek(e);
             });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isSeeking) {
-                    performSeek(e);
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                isSeeking = false;
-                document.body.classList.remove('seeking');
-            });
+            document.addEventListener('mousemove', (e) => { if (isSeeking) { performSeek(e); } });
+            document.addEventListener('mouseup', () => { isSeeking = false; document.body.classList.remove('seeking'); });
 
             $('playPauseBtn').addEventListener('click', () => {
                 if (!player) return;
                 const state = player.getPlayerState();
-                if (state === YT.PlayerState.PLAYING) {
-                    player.pauseVideo();
+                if (state === YT.PlayerState.PLAYING) player.pauseVideo(); else player.playVideo();
+            });
+            
+            $('volumeBtn').addEventListener('click', () => {
+                if (!player) return;
+                player.isMuted() ? player.unMute() : player.mute();
+                updateVolumeIcon();
+            });
+
+            volumeSlider.addEventListener('input', () => {
+                if (!player) return;
+                player.setVolume(volumeSlider.value);
+                if (player.isMuted()) player.unMute();
+                updateVolumeIcon();
+            });
+            
+            $('fullscreenBtn').addEventListener('click', () => {
+                const iframe = $('iframeWrapper');
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
                 } else {
-                    player.playVideo();
+                    iframe.requestFullscreen().catch(err => alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`));
                 }
             });
+            
+            document.addEventListener('fullscreenchange', () => {
+                const icon = $('fullscreenBtn').querySelector('i');
+                icon.className = document.fullscreenElement ? 'fas fa-compress' : 'fas fa-expand';
+            });
         }
-
 
         // --- Custom Select Logic ---
         function setupCustomSelect() {
@@ -1261,7 +1290,6 @@
                 optionsPanel.classList.remove('hidden', 'opacity-0', '-translate-y-2');
                 icon.classList.add('rotate-180');
             }
-            
             const closeSelect = () => {
                 optionsPanel.classList.add('opacity-0', '-translate-y-2');
                 icon.classList.remove('rotate-180');
@@ -1270,30 +1298,19 @@
 
             trigger.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (optionsPanel.classList.contains('hidden')) {
-                    openSelect();
-                } else {
-                    closeSelect();
-                }
+                if (optionsPanel.classList.contains('hidden')) openSelect(); else closeSelect();
             });
 
             options.forEach(option => {
                 option.addEventListener('click', (e) => {
-                    const newValue = e.currentTarget.dataset.value;
-                    const newText = e.currentTarget.innerText;
-                    
-                    select.dataset.value = newValue;
-                    valueSpan.innerText = newText;
+                    select.dataset.value = e.currentTarget.dataset.value;
+                    valueSpan.innerText = e.currentTarget.innerText;
                     closeSelect();
                     calculatePlan();
                 });
             });
 
-            document.addEventListener('click', (e) => {
-                if (!select.contains(e.target)) {
-                    closeSelect();
-                }
-            });
+            document.addEventListener('click', (e) => { if (!select.contains(e.target)) closeSelect(); });
         }
         
         // --- Init ---
