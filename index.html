@@ -61,6 +61,9 @@
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        .fade-in-fast { animation: fadeInFast 0.3s ease-out; }
+        @keyframes fadeInFast { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
         /* --- Video Modal & Custom Player --- */
         #videoModal { transition: opacity 0.3s ease-in-out; }
         #modalContent { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -70,7 +73,6 @@
         #customControls {
             opacity: 0;
             transition: opacity 0.3s ease;
-            z-index: 20; /* Must be on top of the click interceptor */
         }
         #iframeWrapper:hover #customControls, #iframeWrapper.paused #customControls {
             opacity: 1;
@@ -133,7 +135,7 @@
             <h1 class="text-2xl font-bold text-white tracking-tight">Ultimate<span class="text-red-500">Analyst</span></h1>
         </div>
         <div class="text-xs text-slate-500 font-mono bg-[#1f1f1f] px-3 py-1.5 rounded-full border border-slate-700">
-            v4.3.0 • True Minimal Player
+            v4.2.1 • Player Bugfix
         </div>
     </header>
 
@@ -470,10 +472,7 @@
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
         <div id="modalContent" class="w-full max-w-4xl rounded-2xl space-y-2 opacity-0 transform -translate-y-4 scale-95" onclick="event.stopPropagation()">
             <div id="iframeWrapper" class="relative w-full bg-black rounded-xl overflow-hidden aspect-video">
-                <div id="videoIframe" class="absolute inset-0"></div> <!-- YouTube player is injected here -->
-                
-                <!-- CLICK INTERCEPTOR to block clicks on the native YouTube player -->
-                <div id="clickInterceptor" class="absolute inset-0 z-10"></div>
+                <div id="videoIframe"></div> <!-- YouTube player will be injected here -->
                 
                 <!-- Custom Controls Overlay -->
                 <div id="customControls" class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/70 to-transparent">
@@ -1081,6 +1080,7 @@
 
         function sortTable(col) {
             document.querySelectorAll('th i.fa-sort').forEach(icon => icon.className = "fas fa-sort ml-1 opacity-50");
+            // **FIXED**: Used document.querySelector because the selector is complex
             const icon = document.querySelector(`th[onclick="sortTable('${col}')"] i`);
 
             if(currentSort.col === col) {
@@ -1127,6 +1127,8 @@
         }
 
         function openModal(videoId) {
+            // **FIXED**: Added a user-facing alert and more descriptive error
+            // if the player API isn't ready, instead of failing silently.
             if (!playerReady) {
                 alert("The YouTube player is still loading. Please wait a moment and try again.");
                 console.error("YouTube Iframe API is not ready yet (onYouTubeIframeAPIReady has not fired).");
@@ -1164,20 +1166,12 @@
             const playPauseIcon = $('playPauseBtn').querySelector('i');
             const wrapper = $('iframeWrapper');
             clearInterval(progressInterval);
-
-            // Handle different player states
             if (event.data == YT.PlayerState.PLAYING) {
                 playPauseIcon.className = 'fas fa-pause';
                 wrapper.classList.remove('paused');
                 progressInterval = setInterval(updateSeekerUI, 250);
                 updateTimeDisplay();
-            } else if (event.data == YT.PlayerState.ENDED) {
-                // **NEW**: Prevents "More Videos" grid by resetting the video
-                playPauseIcon.className = 'fas fa-redo'; // Show replay icon
-                wrapper.classList.add('paused');
-                player.seekTo(0);
-                player.pauseVideo();
-            } else { // PAUSED, BUFFERING, CUED
+            } else {
                 playPauseIcon.className = 'fas fa-play';
                 wrapper.classList.add('paused');
             }
@@ -1258,11 +1252,7 @@
             $('playPauseBtn').addEventListener('click', () => {
                 if (!player) return;
                 const state = player.getPlayerState();
-                if (state === YT.PlayerState.PLAYING) {
-                    player.pauseVideo();
-                } else { // Handles PAUSED, ENDED, CUED states
-                    player.playVideo();
-                }
+                if (state === YT.PlayerState.PLAYING) player.pauseVideo(); else player.playVideo();
             });
             
             $('volumeBtn').addEventListener('click', () => {
