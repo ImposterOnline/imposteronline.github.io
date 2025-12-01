@@ -72,36 +72,63 @@
         .fade-in-fast { animation: fadeInFast 0.3s ease-out; }
         @keyframes fadeInFast { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-/* --- Video Modal & Custom Player --- */
-        #videoModal { transition: opacity 0.3s ease-in-out; }
-        #modalContent { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        body.modal-open #videoModal { opacity: 1; pointer-events: auto; }
-        body.modal-open #modalContent { opacity: 1; transform: translateY(0) scale(1); }
-        
-        #iframeWrapper {
-            position: relative;
-            width: 100%;
-            background: #000;
-            border-radius: 0.75rem; /* rounded-xl */
-            overflow: hidden; /* Crucial for cropping */
-            aspect-ratio: 16/9;
-        }
+		/* --- Video Modal & Custom Player --- */
+		#videoModal { 
+			transition: opacity 0.3s ease-in-out; 
+			opacity: 0; 
+			pointer-events: none; /* Hidden by default */
+		}
 
-        /* 
-           THE FIX: Scale the iframe to 140% to push the bottom-right 
-           YouTube logo and the "More Videos" side cards off-screen.
-           Pointer-events: none ensures no one hovers the iframe to trigger native UI.
-        */
-        #videoIframe {
-            position: absolute;
-            pointer-events: none; 
-            transition: filter 0.3s ease;
-        }
+		/* This makes the modal appear when the class is added */
+		body.modal-open #videoModal { 
+			opacity: 1; 
+			pointer-events: auto; 
+		}
 
-        /* Blur the video slightly when paused to hide the "More Videos" popup clearer */
-        #iframeWrapper.paused #videoIframe {
-            filter: blur(8px) brightness(0.6);
-        }
+		#modalContent { 
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+			opacity: 0; 
+			transform: translateY(20px) scale(0.95);
+		}
+
+		body.modal-open #modalContent { 
+			opacity: 1; 
+			transform: translateY(0) scale(1); 
+		}
+
+		#iframeWrapper {
+			position: relative;
+			width: 100%;
+			background: #000;
+			border-radius: 0.75rem; 
+			overflow: hidden;
+			aspect-ratio: 16/9;
+		}
+
+		#videoIframe {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;  /* Reset to normal size */
+			height: 100%; /* Reset to normal size */
+			pointer-events: none; /* Prevents clicking standard YouTube buttons */
+			transition: filter 0.2s ease;
+		}
+
+		/* 
+		   THE COMPROMISE: 
+		   When paused, we blur the video heavily. 
+		   This makes the "More Videos" popup unreadable/invisible
+		   while keeping your custom controls sharp on top.
+		*/
+		#iframeWrapper.paused #videoIframe {
+			filter: blur(15px) brightness(0.4); 
+		}
+
+		/* Optional: Keep your blur effect, or remove it if you prefer a sharp pause */
+		#iframeWrapper.paused #videoIframe {
+			filter: brightness(0.6); /* Reduced blur, rely on crop to hide UI */
+		}
 
         /* --- Custom Overlay --- */
         #playerOverlay {
@@ -1367,25 +1394,25 @@
                 player.loadVideoById(videoId);
             } else {
                 player = new YT.Player('videoIframe', {
-				height: '100%',
-				width: '100%',
-				videoId: videoId,
-				playerVars: {
-					'autoplay': 1,
-					'controls': 0,       // Hides bottom bar
-					'disablekb': 1,      // Disables YouTube keyboard shortcuts (use your own)
-					'fs': 0,             // Hides fullscreen button
-					'iv_load_policy': 3, // Hides annotations
-					'modestbranding': 1, // Minimal logo
-					'rel': 0,            // Limits related videos (but doesn't hide shelf)
-					'showinfo': 0,       // (Deprecated but good to have)
-					'ecver': 2           // Helps with clean UI on some browsers
-				},
-				events: {
-					'onReady': onPlayerReady,
-					'onStateChange': onPlayerStateChange
-				}
-			});
+					height: '100%',
+					width: '100%',
+					videoId: videoId,
+					playerVars: {
+						'autoplay': 1,
+						'controls': 0,       // Hides bottom bar
+						'disablekb': 1,      // Disables YouTube keyboard shortcuts (use your own)
+						'fs': 0,             // Hides fullscreen button
+						'iv_load_policy': 3, // Hides annotations
+						'modestbranding': 1, // Minimal logo
+						'rel': 0,            // Limits related videos (but doesn't hide shelf)
+						'showinfo': 0,       // (Deprecated but good to have)
+						'ecver': 2           // Helps with clean UI on some browsers
+					},
+					events: {
+						'onReady': onPlayerReady,
+						'onStateChange': onPlayerStateChange
+					}
+				});
             }
         }
         
