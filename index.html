@@ -72,7 +72,7 @@
         .fade-in-fast { animation: fadeInFast 0.3s ease-out; }
         @keyframes fadeInFast { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-		/* --- Video Modal & Custom Player --- */
+/* --- Video Modal & Custom Player --- */
         #videoModal { transition: opacity 0.3s ease-in-out; }
         #modalContent { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         body.modal-open #videoModal { opacity: 1; pointer-events: auto; }
@@ -1367,25 +1367,25 @@
                 player.loadVideoById(videoId);
             } else {
                 player = new YT.Player('videoIframe', {
-					height: '100%',
-					width: '100%',
-					videoId: videoId,
-					playerVars: {
-						'autoplay': 1,
-						'controls': 0,       // Hides bottom bar
-						'disablekb': 1,      // Disables YouTube keyboard shortcuts (use your own)
-						'fs': 0,             // Hides fullscreen button
-						'iv_load_policy': 3, // Hides annotations
-						'modestbranding': 1, // Minimal logo
-						'rel': 0,            // Limits related videos (but doesn't hide shelf)
-						'showinfo': 0,       // (Deprecated but good to have)
-						'ecver': 2           // Helps with clean UI on some browsers
-					},
-					events: {
-						'onReady': onPlayerReady,
-						'onStateChange': onPlayerStateChange
-					}
-				});
+				height: '100%',
+				width: '100%',
+				videoId: videoId,
+				playerVars: {
+					'autoplay': 1,
+					'controls': 0,       // Hides bottom bar
+					'disablekb': 1,      // Disables YouTube keyboard shortcuts (use your own)
+					'fs': 0,             // Hides fullscreen button
+					'iv_load_policy': 3, // Hides annotations
+					'modestbranding': 1, // Minimal logo
+					'rel': 0,            // Limits related videos (but doesn't hide shelf)
+					'showinfo': 0,       // (Deprecated but good to have)
+					'ecver': 2           // Helps with clean UI on some browsers
+				},
+				events: {
+					'onReady': onPlayerReady,
+					'onStateChange': onPlayerStateChange
+				}
+			});
             }
         }
         
