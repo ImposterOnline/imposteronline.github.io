@@ -73,37 +73,35 @@
         @keyframes fadeInFast { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
 		/* --- Video Modal & Custom Player --- */
-		#iframeWrapper {
-			position: relative;
-			width: 100%;
-			background: #000;
-			border-radius: 0.75rem; 
-			overflow: hidden; /* Crucial: Cuts off the zoomed-out parts */
-			aspect-ratio: 16/9;
-		}
+        #videoModal { transition: opacity 0.3s ease-in-out; }
+        #modalContent { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        body.modal-open #videoModal { opacity: 1; pointer-events: auto; }
+        body.modal-open #modalContent { opacity: 1; transform: translateY(0) scale(1); }
+        
+        #iframeWrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 0.75rem; /* rounded-xl */
+            overflow: hidden; /* Crucial for cropping */
+            aspect-ratio: 16/9;
+        }
 
-		#videoIframe {
-			position: absolute;
-			/* Center the video */
-			top: 50%;
-			left: 50%;
-			/* 
-			   THE TRICK: Scale video to 140% (or 150%). 
-			   This pushes the YouTube title, share buttons, and "More Videos" 
-			   shelf outside the visible #iframeWrapper box.
-			*/
-			width: 140%; 
-			height: 140%;
-			transform: translate(-50%, -50%);
-			
-			pointer-events: none; /* Ensures user cannot click the hidden YouTube UI */
-			transition: filter 0.3s ease;
-		}
+        /* 
+           THE FIX: Scale the iframe to 140% to push the bottom-right 
+           YouTube logo and the "More Videos" side cards off-screen.
+           Pointer-events: none ensures no one hovers the iframe to trigger native UI.
+        */
+        #videoIframe {
+            position: absolute;
+            pointer-events: none; 
+            transition: filter 0.3s ease;
+        }
 
-		/* Optional: Keep your blur effect, or remove it if you prefer a sharp pause */
-		#iframeWrapper.paused #videoIframe {
-			filter: brightness(0.6); /* Reduced blur, rely on crop to hide UI */
-		}
+        /* Blur the video slightly when paused to hide the "More Videos" popup clearer */
+        #iframeWrapper.paused #videoIframe {
+            filter: blur(8px) brightness(0.6);
+        }
 
         /* --- Custom Overlay --- */
         #playerOverlay {
