@@ -2,100 +2,146 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Imposter - Find the Spy</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png" type="image/png">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel for JSX -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     
-    <!-- Animation Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#020617',
+                        },
+                        brand: {
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideUp: {
+                            'from': { transform: 'translateY(20px)', opacity: '0' },
+                            'to': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
+        :root {
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #020617; /* Slate 950 */
+            background-color: #020617;
             color: #f8fafc;
-            overflow: hidden; /* Prevent pull-to-refresh on mobile */
+            overflow: hidden;
             -webkit-tap-highlight-color: transparent;
+            touch-action: pan-x pan-y;
+            height: 100dvh;
         }
         
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
+        /* Modern Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
         }
 
-        /* Smooth Gradients */
-        .bg-glass {
-            background: rgba(15, 23, 42, 0.6);
+        .glass-panel-lighter {
+            background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Custom Animations */
-        @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
+        /* Scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 3D Transform Utilities */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+
+        /* Supercell Background Animation */
+        @keyframes supercell-scroll {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .supercell-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .supercell-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('https://www.clashchamps.com/wp-content/uploads/2024/06/czJOx2-Q.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            mix-blend-mode: overlay;
+            animation: supercell-scroll 20s ease-in-out infinite alternate;
+        }
+
+        /* Ambient Blobs */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: 0;
+            animation: blob-bounce 10s infinite ease-in-out;
+        }
+        @keyframes blob-bounce {
+            0%, 100% { transform: translate(0, 0) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
             66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob {
-            animation: blob 10s infinite;
-        }
-        .animation-delay-2000 {
-            animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-            animation-delay: 4s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes slide-up {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-up {
-            animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* Hide scrollbar for clean UI */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        /* 3D Card Effects */
-        .perspective-1000 {
-            perspective: 1000px;
-        }
-        .preserve-3d {
-            transform-style: preserve-3d;
-        }
-        .backface-hidden {
-            backface-visibility: hidden;
-        }
-        .rotate-y-180 {
-            transform: rotateY(180deg);
         }
     </style>
 </head>
@@ -105,66 +151,100 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- ICONS (Inline SVGs) ---
-        const Icon = ({ path, size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                {path}
-            </svg>
-        );
-
-        const Icons = {
-            Users: (props) => <Icon {...props} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />,
-            Play: (props) => <Icon {...props} path={<polygon points="5 3 19 12 5 21 5 3"/>} />,
-            Settings: (props) => <Icon {...props} path={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>} />,
-            Refresh: (props) => <Icon {...props} path={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>} />,
-            Timer: (props) => <Icon {...props} path={<><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></>} />,
-            Film: (props) => <Icon {...props} path={<><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/><line x1="7" x2="7" y1="2" y2="22"/><line x1="17" x2="17" y1="2" y2="22"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="2" x2="7" y1="7" y2="7"/><line x1="2" x2="7" y1="17" y2="17"/><line x1="17" x2="22" y1="17" y2="17"/><line x1="17" x2="22" y1="7" y2="7"/></>} />,
-            Utensils: (props) => <Icon {...props} path={<><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></>} />,
-            ShoppingBag: (props) => <Icon {...props} path={<><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></>} />,
-            Cpu: (props) => <Icon {...props} path={<><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 14h3"/><path d="M1 9h3"/><path d="M1 14h3"/></>} />,
-            Briefcase: (props) => <Icon {...props} path={<><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>} />,
-            Ghost: (props) => <Icon {...props} path={<><path d="M9 22v-2c0-.6.4-1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M9 2h6"/><path d="M4 10v6a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4v-6"/><path d="M12 2a8 8 0 0 0-8 8v2"/><path d="M20 12v-2a8 8 0 0 0-8-8"/></>} />, 
-            Trophy: (props) => <Icon {...props} path={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>} />,
-            Globe: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></>} />,
-            Music: (props) => <Icon {...props} path={<><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></>} />,
-            MapPin: (props) => <Icon {...props} path={<><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>} />,
-            Zap: (props) => <Icon {...props} path={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>} />,
-            ChevronUp: (props) => <Icon {...props} path={<polyline points="18 15 12 9 6 15"/>} />,
-            User: (props) => <Icon {...props} path={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />,
-            Eye: (props) => <Icon {...props} path={<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>} />,
-            EyeOff: (props) => <Icon {...props} path={<><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></>} />,
-            Lock: (props) => <Icon {...props} path={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />,
-            Check: (props) => <Icon {...props} path={<polyline points="20 6 9 17 4 12"/>} />,
-        };
-
-        // --- DATA STORE ---
+        // --- DATA ---
+        // Same Word Bank as before
         const WORD_BANK = {
-            Movies: ["The Godfather", "Titanic", "Avatar", "Star Wars", "Jurassic Park", "The Matrix", "Inception", "Forrest Gump", "The Lion King", "Avengers", "Pulp Fiction", "Frozen", "The Dark Knight", "Harry Potter", "Back to the Future", "Rocky", "Gladiator", "Shrek", "Toy Story", "Jaws", "Interstellar", "Parasite", "Coco", "Up", "Wall-E", "Alien", "Terminator", "Fight Club", "Goodfellas", "Spirited Away", "Barbie", "Oppenheimer", "Dune", "Spider-Man", "Black Panther", "Iron Man", "Wonder Woman", "Joker", "Top Gun", "The Shining", "Get Out", "Blade Runner", "E.T.", "Indiana Jones", "Schindler's List", "Lord of the Rings", "Silence of the Lambs", "Casablanca", "Citizen Kane"],
-            Food: ["Pizza", "Sushi", "Burger", "Tacos", "Pasta", "Curry", "Steak", "Salad", "Sandwich", "Soup", "Fried Chicken", "Ramen", "Dumplings", "Burrito", "Pancakes", "Waffles", "Ice Cream", "Chocolate", "Cheese", "Bread", "Donuts", "Croissant", "Bagel", "Hot Dog", "Fries", "Lasagna", "Paella", "Kebab", "Falafel", "Dim Sum", "Pho", "Pad Thai", "Biryani", "Sashimi", "Tiramisu", "Cheesecake", "Pie", "Brownie", "Popcorn", "Nachos", "Guacamole", "Hummus", "Omelette", "Yogurt", "Bacon", "Sausage", "Risotto", "Gnocchi", "Pretzel", "Macaron"],
-            Brands: ["Apple", "Nike", "Coca-Cola", "Samsung", "McDonalds", "Toyota", "Disney", "Amazon", "Google", "Tesla", "Adidas", "Pepsi", "Starbucks", "Netflix", "Microsoft", "Mercedes", "BMW", "Honda", "Sony", "Lego", "IKEA", "Zara", "H&M", "Gucci", "Louis Vuitton", "Rolex", "Canon", "Nikon", "PlayStation", "Xbox", "Spotify", "Uber", "Airbnb", "Facebook", "Instagram", "TikTok", "Twitter", "YouTube", "Visa", "Mastercard", "Ferrari", "Porsche", "Lamborghini", "Intel", "AMD", "Dell", "HP", "Adobe", "Slack", "Zoom"],
-            Technology: ["iPhone", "Laptop", "Drone", "Robot", "Bluetooth", "Wifi", "Keyboard", "Mouse", "Monitor", "Camera", "Headphones", "Smartwatch", "Tablet", "Printer", "Router", "Server", "Microchip", "Satellite", "Telescope", "Microscope", "VR Headset", "Console", "Battery", "Charger", "USB", "Cloud", "Algorithm", "Internet", "Software", "Hardware", "Smartphone", "GPS", "Laser", "Radar", "Scanner", "Projector", "Speaker", "Microphone", "Webcam", "Flash Drive"],
-            Jobs: ["Doctor", "Teacher", "Engineer", "Lawyer", "Chef", "Pilot", "Firefighter", "Police", "Artist", "Musician", "Actor", "Writer", "Scientist", "Programmer", "Designer", "Architect", "Nurse", "Dentist", "Vet", "Farmer", "Astronaut", "Athlete", "Judge", "Politician", "Journalist", "Photographer", "Mechanic", "Plumber", "Electrician", "Carpenter", "Librarian", "Accountant", "Manager", "CEO", "Secretary", "Receptionist", "Waiter", "Bartender", "Barber", "Soldier"],
-            Mythology: ["Zeus", "Thor", "Hercules", "Medusa", "Dragon", "Unicorn", "Phoenix", "Mermaid", "Centaur", "Griffin", "Poseidon", "Hades", "Athena", "Apollo", "Odin", "Loki", "Anubis", "Ra", "Sphinx", "Hydra", "Cyclops", "Minotaur", "Pegasus", "Vampire", "Werewolf", "Ghost", "Zombie", "Elf", "Dwarf", "Giant", "Kraken", "Chimera", "Cerberus", "Valkyrie", "Fairy", "Goblin", "Troll", "Witch", "Wizard", "Demon"],
-            Sport: ["Soccer", "Basketball", "Football", "Tennis", "Golf", "Cricket", "Rugby", "Baseball", "Volleyball", "Hockey", "Boxing", "MMA", "Wrestling", "Formula 1", "Swimming", "Athletics", "Gymnastics", "Cycling", "Skiing", "Surfing", "Skateboarding", "Snowboarding", "Table Tennis", "Badminton", "Bowling", "Pool", "Darts", "Archery", "Fencing", "Judo", "Karate", "Taekwondo", "Yoga", "Pilates", "Crossfit", "Marathon", "Triathlon", "Rowing", "Sailing", "Climbing"],
-            Places: ["School", "Hospital", "Library", "Airport", "Station", "Park", "Beach", "Forest", "Mountain", "Desert", "City", "Village", "Farm", "Zoo", "Museum", "Cinema", "Mall", "Restaurant", "Hotel", "Bank", "Office", "Factory", "Prison", "Church", "Temple", "Mosque", "Stadium", "Gym", "Pool", "Casino", "Castle", "Palace", "Bridge", "Tower", "Skyscraper", "Lighthouse", "Pyramid", "Cave", "Island", "Volcano"],
-            Instruments: ["Guitar", "Piano", "Drums", "Violin", "Flute", "Saxophone", "Trumpet", "Cello", "Harp", "Clarinet", "Trombone", "Tuba", "Banjo", "Ukulele", "Accordion", "Harmonica", "Xylophone", "Synthesizer", "Oboe", "Bass", "Microphone", "Turntable", "Speaker", "Amplifier", "Bongo", "Conga", "Tambourine", "Maracas", "Triangle", "Gong"],
-            Superheroes: ["Superman", "Batman", "Spider-Man", "Iron Man", "Wonder Woman", "Thor", "Hulk", "Captain America", "Black Panther", "Flash", "Aquaman", "Green Lantern", "Wolverine", "Deadpool", "Doctor Strange", "Black Widow", "Hawkeye", "Ant-Man", "Daredevil", "Cyclops", "Storm", "Jean Grey", "Professor X", "Magneto", "Joker", "Thanos", "Loki", "Venom", "Groot", "Rocket"]
+            Supercell: ["Barbarian", "Archer", "Giant", "Goblin", "Wall Breaker", "Balloon", "Wizard", "Healer", "Dragon", "P.E.K.K.A", "Minion", "Hog Rider", "Valkyrie", "Golem", "Witch", "Lava Hound", "Bowler", "Baby Dragon", "Miner", "Electro Dragon", "Yeti", "Ice Golem", "Headhunter", "Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Knight", "Musketeer", "Prince", "Skeleton Army", "Goblin Barrel", "Giant Skeleton", "Royal Giant", "Elite Barbarians", "Mega Minion", "Ice Wizard", "Electro Wizard", "Inferno Dragon", "Night Witch", "Bandit", "Royal Ghost", "Magic Archer", "Lumberjack", "Ram Rider", "Fisherman", "Mother Witch", "Electro Giant", "Phoenix", "Monk", "Little Prince", "Cannon", "Tesla", "Mortar", "X-Bow", "Inferno Tower", "Bomb Tower", "Elixir Collector"],
+            Movies: ["The Godfather", "Titanic", "Avatar", "Star Wars", "Jurassic Park", "The Matrix", "Inception", "Forrest Gump", "The Lion King", "Avengers", "Pulp Fiction", "Frozen", "The Dark Knight", "Harry Potter", "Back to the Future", "Rocky", "Gladiator", "Shrek", "Toy Story", "Jaws", "Interstellar", "Parasite", "Coco", "Up", "Wall-E", "Alien", "Terminator", "Fight Club", "Goodfellas", "Spirited Away", "Barbie", "Oppenheimer", "Dune", "Spider-Man", "Black Panther", "Iron Man", "Wonder Woman", "Joker", "Top Gun", "The Shining", "Get Out", "Blade Runner", "E.T.", "Indiana Jones", "Schindler's List", "Lord of the Rings", "Silence of the Lambs", "Casablanca", "Citizen Kane", "The Prestige", "Memento", "Se7en", "Zootopia", "Moana", "Inside Out", "Finding Nemo", "Ratatouille", "The Incredibles"],
+            Food: ["Pizza", "Sushi", "Burger", "Tacos", "Pasta", "Curry", "Steak", "Salad", "Sandwich", "Soup", "Fried Chicken", "Ramen", "Dumplings", "Burrito", "Pancakes", "Waffles", "Ice Cream", "Chocolate", "Cheese", "Bread", "Donuts", "Croissant", "Bagel", "Hot Dog", "Fries", "Lasagna", "Paella", "Kebab", "Falafel", "Dim Sum", "Pho", "Pad Thai", "Biryani", "Sashimi", "Tiramisu", "Cheesecake", "Pie", "Brownie", "Popcorn", "Nachos", "Guacamole", "Hummus", "Omelette", "Yogurt", "Bacon", "Sausage", "Risotto", "Gnocchi", "Pretzel", "Macaron", "Tofu", "Kimchi", "Spring Roll", "Fish and Chips", "Meatballs", "Chili", "Stew", "Cereal", "Toast", "Jam", "Honey", "Butter", "Smoothie", "Milkshake"],
+            Brands: ["Apple", "Nike", "Coca-Cola", "Samsung", "McDonalds", "Toyota", "Disney", "Amazon", "Google", "Tesla", "Adidas", "Pepsi", "Starbucks", "Netflix", "Microsoft", "Mercedes", "BMW", "Honda", "Sony", "Lego", "IKEA", "Zara", "H&M", "Gucci", "Louis Vuitton", "Rolex", "Canon", "Nikon", "PlayStation", "Xbox", "Spotify", "Uber", "Airbnb", "Facebook", "Instagram", "TikTok", "Twitter", "YouTube", "Visa", "Mastercard", "Ferrari", "Porsche", "Lamborghini", "Intel", "AMD", "Dell", "HP", "Adobe", "Slack", "Zoom", "Ford", "Chevrolet", "Jeep", "Nissan", "Hyundai", "Kia", "Volkswagon", "Audi", "Prada", "Chanel", "Hermes", "Versace", "Burberry", "Tiffany", "Cartier", "Omega"],
+            Technology: ["iPhone", "Laptop", "Drone", "Robot", "Bluetooth", "Wifi", "Keyboard", "Mouse", "Monitor", "Camera", "Headphones", "Smartwatch", "Tablet", "Printer", "Router", "Server", "Microchip", "Satellite", "Telescope", "Microscope", "VR Headset", "Console", "Battery", "Charger", "USB", "Cloud", "Algorithm", "Internet", "Software", "Hardware", "Smartphone", "GPS", "Laser", "Radar", "Scanner", "Projector", "Speaker", "Microphone", "Webcam", "Flash Drive", "Hard Drive", "Processor", "Graphics Card", "Motherboard", "Fan", "Screen", "Pixel", "Code", "Database", "Network", "Firewall", "Encryption", "Hacker", "Virus", "AI", "Blockchain", "Crypto", "Nft"],
+            Jobs: ["Doctor", "Teacher", "Engineer", "Lawyer", "Chef", "Pilot", "Firefighter", "Police", "Artist", "Musician", "Actor", "Writer", "Scientist", "Programmer", "Designer", "Architect", "Nurse", "Dentist", "Vet", "Farmer", "Astronaut", "Athlete", "Judge", "Politician", "Journalist", "Photographer", "Mechanic", "Plumber", "Electrician", "Carpenter", "Librarian", "Accountant", "Manager", "CEO", "Secretary", "Receptionist", "Waiter", "Bartender", "Barber", "Soldier", "Detective", "Spy", "Pilot", "Stewardess", "Captain", "Sailor", "Miner", "Baker", "Butcher", "Tailor", "Cleaner", "Gardener", "Driver", "Postman", "Courier", "Guard", "Coach", "Referee"],
+            Mythology: ["Zeus", "Thor", "Hercules", "Medusa", "Dragon", "Unicorn", "Phoenix", "Mermaid", "Centaur", "Griffin", "Poseidon", "Hades", "Athena", "Apollo", "Odin", "Loki", "Anubis", "Ra", "Sphinx", "Hydra", "Cyclops", "Minotaur", "Pegasus", "Vampire", "Werewolf", "Ghost", "Zombie", "Elf", "Dwarf", "Giant", "Kraken", "Chimera", "Cerberus", "Valkyrie", "Fairy", "Goblin", "Troll", "Witch", "Wizard", "Demon", "Angel", "Spirit", "Titan", "Nymph", "Satyr", "Basilisk", "Yeti", "Bigfoot", "Loch Ness", "Mummy", "Alien", "Genie", "Leprechaun", "Banshee", "Siren"],
+            Sport: ["Soccer", "Basketball", "Football", "Tennis", "Golf", "Cricket", "Rugby", "Baseball", "Volleyball", "Hockey", "Boxing", "MMA", "Wrestling", "Formula 1", "Swimming", "Athletics", "Gymnastics", "Cycling", "Skiing", "Surfing", "Skateboarding", "Snowboarding", "Table Tennis", "Badminton", "Bowling", "Pool", "Darts", "Archery", "Fencing", "Judo", "Karate", "Taekwondo", "Yoga", "Pilates", "Crossfit", "Marathon", "Triathlon", "Rowing", "Sailing", "Climbing", "Hiking", "Fishing", "Hunting", "Horse Riding", "Polo", "Lacrosse", "Handball", "Squash", "Racquetball", "Softball", "Kickball", "Dodgeball", "Frisbee", "Parkour", "Cheerleading", "Ballet"],
+            Places: ["School", "Hospital", "Library", "Airport", "Station", "Park", "Beach", "Forest", "Mountain", "Desert", "City", "Village", "Farm", "Zoo", "Museum", "Cinema", "Mall", "Restaurant", "Hotel", "Bank", "Office", "Factory", "Prison", "Church", "Temple", "Mosque", "Stadium", "Gym", "Pool", "Casino", "Castle", "Palace", "Bridge", "Tower", "Skyscraper", "Lighthouse", "Pyramid", "Cave", "Island", "Volcano", "Jungle", "Swamp", "River", "Lake", "Ocean", "Space", "Moon", "Mars", "Sun", "Star", "Galaxy", "Universe", "Heaven", "Hell", "Garden", "Garage", "Basement", "Attic"],
+            Instruments: ["Guitar", "Piano", "Drums", "Violin", "Flute", "Saxophone", "Trumpet", "Cello", "Harp", "Clarinet", "Trombone", "Tuba", "Banjo", "Ukulele", "Accordion", "Harmonica", "Xylophone", "Synthesizer", "Oboe", "Bass", "Microphone", "Turntable", "Speaker", "Amplifier", "Bongo", "Conga", "Tambourine", "Maracas", "Triangle", "Gong", "Cymbal", "Organ", "Keyboard", "Bagpipes", "Didgeridoo", "Sitar", "Lute", "Mandolin", "Recorder", "Whistle", "Bell", "Chime", "Castanets", "Cowbell", "Kazoo", "Theremin", "Viola", "Double Bass", "Bassoon", "French Horn"],
+            Superheroes: ["Superman", "Batman", "Spider-Man", "Iron Man", "Wonder Woman", "Thor", "Hulk", "Captain America", "Black Panther", "Flash", "Aquaman", "Green Lantern", "Wolverine", "Deadpool", "Doctor Strange", "Black Widow", "Hawkeye", "Ant-Man", "Daredevil", "Cyclops", "Storm", "Jean Grey", "Professor X", "Magneto", "Joker", "Thanos", "Loki", "Venom", "Groot", "Rocket", "Star-Lord", "Gamora", "Drax", "Nebula", "Mantis", "Vision", "Scarlet Witch", "Falcon", "Winter Soldier", "War Machine", "Nick Fury", "Captain Marvel", "Shazam", "Green Arrow", "Supergirl", "Batgirl", "Robin", "Nightwing", "Cyborg", "Beast Boy", "Raven", "Starfire"],
+            Animals: ["Lion", "Tiger", "Elephant", "Giraffe", "Penguin", "Dolphin", "Whale", "Shark", "Eagle", "Parrot", "Dog", "Cat", "Hamster", "Snake", "Lizard", "Frog", "Bear", "Wolf", "Fox", "Deer", "Zebra", "Kangaroo", "Koala", "Panda", "Gorilla", "Monkey", "Rabbit", "Mouse", "Rat", "Bat", "Owl", "Hawk", "Crocodile", "Alligator", "Turtle", "Octopus", "Jellyfish", "Crab", "Lobster", "Spider", "Bee", "Ant", "Butterfly", "Moth", "Dragonfly", "Mosquito", "Fly", "Beetle", "Worm", "Snail", "Cheetah", "Leopard", "Rhino", "Hippo", "Camel", "Llama", "Alpaca", "Sheep", "Goat", "Cow", "Pig", "Horse", "Chicken", "Duck", "Goose", "Turkey", "Peacock", "Swan", "Flamingo"],
+            Countries: ["USA", "Canada", "Mexico", "Brazil", "Argentina", "UK", "France", "Germany", "Italy", "Spain", "Russia", "China", "Japan", "India", "Australia", "Egypt", "South Africa", "Nigeria", "Kenya", "Morocco", "Turkey", "Saudi Arabia", "Iran", "Israel", "Sweden", "Norway", "Finland", "Denmark", "Netherlands", "Belgium", "Switzerland", "Austria", "Poland", "Greece", "Portugal", "Ireland", "Scotland", "Wales", "Thailand", "Vietnam", "Indonesia", "Philippines", "Malaysia", "Singapore", "South Korea", "North Korea", "Pakistan", "Bangladesh", "New Zealand", "Fiji", "Cuba", "Jamaica", "Peru", "Chile", "Colombia", "Venezuela", "Ukraine", "Romania", "Hungary", "Czech Republic", "Croatia", "Serbia"],
+            VideoGames: ["Mario", "Zelda", "Pokemon", "Minecraft", "Fortnite", "Roblox", "Call of Duty", "GTA", "Halo", "God of War", "The Witcher", "Skyrim", "Fallout", "Overwatch", "League of Legends", "Dota", "World of Warcraft", "Counter-Strike", "Valorant", "Apex Legends", "Tetris", "Pac-Man", "Sonic", "Street Fighter", "Mortal Kombat", "Tekken", "Final Fantasy", "Resident Evil", "Silent Hill", "Metal Gear Solid", "Uncharted", "The Last of Us", "Red Dead Redemption", "Cyberpunk", "Elden Ring", "Dark Souls", "Bloodborne", "Sekiro", "Animal Crossing", "Stardew Valley", "Among Us", "Rocket League", "FIFA", "NBA 2K", "Madden", "Sims", "Civilization", "Portal", "Half-Life", "Doom", "Quake", "Bioshock", "Mass Effect", "Assassins Creed", "Far Cry", "Destiny"],
+            Science: ["Atom", "Molecule", "Cell", "DNA", "Gravity", "Magnetism", "Electricity", "Light", "Sound", "Heat", "Energy", "Force", "Motion", "Planet", "Star", "Galaxy", "Black Hole", "Comet", "Asteroid", "Meteor", "Element", "Compound", "Acid", "Base", "Bacteria", "Virus", "Fungus", "Plant", "Animal", "Human", "Brain", "Heart", "Lungs", "Stomach", "Bone", "Muscle", "Nerve", "Blood", "Skin", "Evolution", "Photosynthesis", "Respiration", "Digestion", "Reproduction", "Genetics", "Chemistry", "Physics", "Biology", "Astronomy", "Geology", "Microscope", "Telescope", "Thermometer", "Barometer", "Compass", "Magnet", "Battery", "Circuit", "Prism", "Lens", "Mirror", "Laser", "Robot", "Satellite", "Rocket"],
+            Clothing: ["Shirt", "T-Shirt", "Pants", "Jeans", "Shorts", "Skirt", "Dress", "Suit", "Coat", "Jacket", "Sweater", "Hoodie", "Vest", "Scarf", "Gloves", "Hat", "Cap", "Beanie", "Socks", "Shoes", "Boots", "Sandals", "Sneakers", "Heels", "Slippers", "Belt", "Tie", "Bowtie", "Watch", "Glasses", "Sunglasses", "Ring", "Necklace", "Bracelet", "Earrings", "Wallet", "Purse", "Backpack", "Bag", "Umbrella", "Raincoat", "Swimsuit", "Bikini", "Pajamas", "Robe", "Uniform", "Costume", "Mask", "Helmet", "Crown", "Tiara", "Cape", "Apron", "Overalls", "Leggings", "Tights", "Stockings", "Underwear", "Bra", "Boxers", "Briefs", "Diaper", "Bib"],
+            Home: ["Table", "Chair", "Sofa", "Bed", "Desk", "Shelf", "Cabinet", "Cupboard", "Wardrobe", "Lamp", "Light", "Fan", "Heater", "AC", "Fridge", "Stove", "Oven", "Microwave", "Toaster", "Blender", "Mixer", "Kettle", "Pot", "Pan", "Plate", "Bowl", "Cup", "Glass", "Mug", "Fork", "Spoon", "Knife", "Napkin", "Towel", "Soap", "Shampoo", "Toothbrush", "Toothpaste", "Comb", "Brush", "Mirror", "Clock", "Calendar", "Painting", "Vase", "Rug", "Carpet", "Curtains", "Blinds", "Pillow", "Blanket", "Sheet", "Mattress", "Cushion", "Door", "Window", "Wall", "Floor", "Ceiling", "Roof", "Stairs", "Ladder", "Broom", "Mop", "Bucket", "Trash Can"],
+            People: ["President", "King", "Queen", "Athlete", "Celebrity", "Artist", "Musician", "Scientist", "Teacher", "Student", "Child", "Elderly", "Baby", "Tourist", "Police Officer", "Doctor", "Firefighter", "Chef", "Astronaut", "Villain", "Hero", "Neighbor", "Friend", "Boss", "Employee", "Stranger", "Beggar", "Model", "Guard", "Priest", "Nun", "Monk", "Philosopher", "Inventor", "Explorer", "Pirate", "Ninja", "Samurai", "Viking", "Knight", "Jester", "Clown", "Magician", "Detective", "Spy", "Ghost", "Alien", "Robot", "Vampire", "Werewolf", "Zombie", "Mermaid", "Dwarf", "Elf", "Giant", "Wizard", "Witch"],
         };
 
         const CATEGORY_ICONS = {
-            Movies: Icons.Film,
-            Food: Icons.Utensils,
-            Brands: Icons.ShoppingBag,
-            Technology: Icons.Cpu,
-            Jobs: Icons.Briefcase,
-            Mythology: Icons.Ghost,
-            Sport: Icons.Trophy,
-            Places: Icons.MapPin,
-            Instruments: Icons.Music,
-            Superheroes: Icons.Zap
+            Supercell: "https://twitch.supercell.com/supercell-logo.png",
+            Movies: "fa-video",
+            Food: "fa-utensils",
+            Brands: "fa-bag-shopping",
+            Technology: "fa-microchip",
+            Jobs: "fa-briefcase",
+            Mythology: "fa-mask", 
+            Sport: "fa-trophy",
+            Places: "fa-location-dot",
+            Instruments: "fa-music",
+            Superheroes: "fa-bolt",
+            Animals: "fa-paw",
+            Countries: "fa-flag",
+            VideoGames: "fa-gamepad",
+            Science: "fa-flask",
+            Clothing: "fa-shirt",
+            Home: "fa-house",
+            People: "fa-user-group"
         };
+        
+        const DISPLAY_CATEGORIES = ['Supercell', ...Object.keys(WORD_BANK).filter(c => c !== 'Supercell')];
 
         // --- COMPONENTS ---
+
+        const FaIcon = ({ name, sizeClass = "text-xl", className = "" }) => {
+            if (name.startsWith('http')) {
+                return <img src={name} alt="icon" className={`w-8 h-8 object-contain ${className}`} />;
+            }
+            return <i className={`fa-solid ${name} ${sizeClass} ${className}`}></i>;
+        };
+
+        // Modal for Long Press Category Info
+        const CategoryInfoModal = ({ category, onClose }) => {
+            if (!category) return null;
+            
+            const examples = WORD_BANK[category].slice(0, 8).join(", ");
+            const icon = CATEGORY_ICONS[category];
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose}></div>
+                    <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up transform transition-all">
+                        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/5 rounded-full text-white/50 hover:bg-white/10">
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
+                        
+                        <div className="flex flex-col items-center text-center mb-6">
+                            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${category === 'Supercell' ? 'bg-blue-500/20' : 'bg-brand-500/20'} ring-1 ring-white/10`}>
+                                <FaIcon name={icon} sizeClass="text-3xl" className={category === 'Supercell' ? '' : 'text-brand-400'} />
+                            </div>
+                            <h2 className="text-2xl font-display font-bold text-white">{category}</h2>
+                            <p className="text-white/40 text-xs font-bold tracking-widest uppercase mt-1">Category Info</p>
+                        </div>
+                        
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                            <h3 className="text-white/70 text-sm font-semibold mb-2 flex items-center gap-2">
+                                <i className="fa-solid fa-list-ul text-brand-400 text-xs"></i> Examples
+                            </h3>
+                            <p className="text-white/90 text-sm leading-relaxed">
+                                {examples}, and more...
+                            </p>
+                        </div>
+                        
+                        <div className="mt-6 text-center text-white/30 text-xs">
+                            Tap anywhere to close
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         // 1. Setup Screen
         const SetupScreen = ({ onStartGame }) => {
@@ -174,18 +254,20 @@
             const [players, setPlayers] = useState(() => {
                 try {
                     const saved = localStorage.getItem('imposter_players');
-                    const loadedPlayers = saved ? JSON.parse(saved) : DEFAULT_PLAYERS;
-                    return loadedPlayers.length >= MIN_PLAYERS ? loadedPlayers : DEFAULT_PLAYERS;
-                } catch (e) {
-                    return DEFAULT_PLAYERS;
-                }
+                    return saved ? JSON.parse(saved) : DEFAULT_PLAYERS;
+                } catch { return DEFAULT_PLAYERS; }
             });
 
             const [newPlayerName, setNewPlayerName] = useState('');
-            const [selectedCategories, setSelectedCategories] = useState(['Movies', 'Food', 'Technology']);
+            const [selectedCategories, setSelectedCategories] = useState(['Movies', 'Food', 'Animals']);
             const [timerMinutes, setTimerMinutes] = useState(3);
             const [timerEnabled, setTimerEnabled] = useState(true);
+            const [isRandomMode, setIsRandomMode] = useState(false);
+            const [inspectedCategory, setInspectedCategory] = useState(null);
 
+            // Long press logic
+            const timerRef = useRef(null);
+            
             useEffect(() => {
                 localStorage.setItem('imposter_players', JSON.stringify(players));
             }, [players]);
@@ -206,7 +288,8 @@
             };
 
             const toggleCategory = (cat) => {
-                if (selectedCategories.includes(cat)) {
+                const isSelected = selectedCategories.includes(cat);
+                if (isSelected) {
                     if (selectedCategories.length > 1) {
                         setSelectedCategories(selectedCategories.filter(c => c !== cat));
                         if (navigator.vibrate) navigator.vibrate(5);
@@ -217,139 +300,207 @@
                 }
             };
 
+            const handleTouchStart = (cat) => {
+                timerRef.current = setTimeout(() => {
+                    setInspectedCategory(cat);
+                    if (navigator.vibrate) navigator.vibrate(30);
+                }, 600);
+            };
+
+            const handleTouchEnd = () => {
+                if (timerRef.current) {
+                    clearTimeout(timerRef.current);
+                    timerRef.current = null;
+                }
+            };
+
             return (
-                <div className="flex flex-col h-full overflow-y-auto bg-slate-950 text-white p-6 pb-28 no-scrollbar relative">
-                    {/* Background Blobs */}
-                    <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 animate-blob"></div>
-                         <div className="absolute top-0 -right-4 w-72 h-72 bg-teal-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 animate-blob animation-delay-2000"></div>
-                         <div className="absolute -bottom-8 left-20 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 animate-blob animation-delay-4000"></div>
-                    </div>
+                <div className="flex flex-col h-[100dvh] relative z-10">
+                    <CategoryInfoModal category={inspectedCategory} onClose={() => setInspectedCategory(null)} />
 
-                    <div className="relative z-10 max-w-lg mx-auto w-full">
-                        <div className="mb-8 text-center pt-8">
-                            <h1 className="text-6xl font-black text-white mb-2 tracking-tighter drop-shadow-lg">IMPOSTER</h1>
-                            <p className="text-slate-400 text-xs font-bold tracking-[0.4em] uppercase">Trust No One</p>
-                        </div>
-
-                        {/* Players Section */}
-                        <section className="mb-6 bg-glass rounded-[2rem] p-6">
-                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-purple-300">
-                                <Icons.Users size={20} /> <span className="tracking-tight">PLAYERS</span>
-                                <span className="ml-auto text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-400">{players.length} / {MIN_PLAYERS}+</span>
-                            </h2>
-                            <div className="flex gap-2 mb-4">
-                                <input
-                                    type="text"
-                                    value={newPlayerName}
-                                    onChange={(e) => setNewPlayerName(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-                                    placeholder="Enter name..."
-                                    className="flex-1 bg-slate-800/50 rounded-2xl px-5 py-3.5 outline-none border border-slate-700/50 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600 font-medium text-sm"
-                                />
-                                <button 
-                                    onClick={addPlayer}
-                                    className="bg-purple-600 hover:bg-purple-500 w-12 h-[50px] flex items-center justify-center rounded-2xl font-bold transition shadow-lg shadow-purple-900/20 active:scale-95"
-                                >
-                                    <span className="text-xl leading-none">+</span>
-                                </button>
+                    <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+                        <div className="max-w-lg mx-auto p-6 pt-12">
+                            {/* Header */}
+                            <div className="mb-10 text-center">
+                                <h1 className="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight">IMPOSTER</h1>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                                    <span className="text-white/60 text-[10px] font-bold tracking-[0.3em] uppercase">Trust No One</span>
+                                </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {players.map((p, i) => (
-                                    <div key={i} className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 pl-4 pr-1.5 py-1.5 rounded-full animate-fadeIn group">
-                                        <span className="text-sm font-semibold text-slate-200">{p}</span>
+
+                            {/* Players */}
+                            <section className="mb-6 glass-panel rounded-[2rem] p-6">
+                                <h2 className="text-sm font-bold tracking-widest text-brand-400 mb-4 flex items-center gap-2 uppercase">
+                                    <i className="fa-solid fa-users"></i> Agents
+                                    <span className="ml-auto text-[10px] bg-white/5 px-2 py-1 rounded-md text-white/50">{players.length} / {MIN_PLAYERS}+</span>
+                                </h2>
+                                <div className="flex gap-2 mb-4">
+                                    <input
+                                        type="text"
+                                        value={newPlayerName}
+                                        onChange={(e) => setNewPlayerName(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
+                                        placeholder="Enter codename..."
+                                        className="flex-1 bg-slate-950/50 rounded-xl px-5 py-4 outline-none border border-white/5 focus:border-brand-500/50 focus:bg-slate-950/80 transition-all placeholder:text-white/20 font-medium text-sm text-white"
+                                    />
+                                    <button 
+                                        onClick={addPlayer}
+                                        className="bg-brand-600 hover:bg-brand-500 w-14 flex items-center justify-center rounded-xl font-bold transition shadow-lg shadow-brand-900/20 active:scale-95 border border-white/10"
+                                    >
+                                        <i className="fa-solid fa-plus text-white text-lg"></i>
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {players.map((p, i) => (
+                                        <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/5 pl-4 pr-1.5 py-1.5 rounded-full animate-fadeIn group hover:bg-white/10 transition-colors">
+                                            <span className="text-xs font-bold text-slate-300">{p}</span>
+                                            <button 
+                                                onClick={() => removePlayer(i)}
+                                                disabled={players.length <= MIN_PLAYERS}
+                                                className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] transition-colors 
+                                                    ${players.length > MIN_PLAYERS 
+                                                        ? 'bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400' 
+                                                        : 'opacity-20 cursor-not-allowed'
+                                                    }`}
+                                            >
+                                                <i className="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Timer */}
+                            <section className="mb-6 glass-panel rounded-[2rem] p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-bold tracking-widest text-sky-400 flex items-center gap-2 uppercase">
+                                        <i className="fa-solid fa-stopwatch"></i> Countdown
+                                    </h2>
+                                    <button 
+                                        onClick={() => {
+                                            setTimerEnabled(!timerEnabled);
+                                            if(navigator.vibrate) navigator.vibrate(10);
+                                        }}
+                                        className={`w-12 h-7 rounded-full p-1 transition-all duration-300 ${timerEnabled ? 'bg-sky-500/80' : 'bg-white/10'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${timerEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                                
+                                <div className={`transition-all duration-300 overflow-hidden ${timerEnabled ? 'opacity-100 max-h-40' : 'opacity-30 max-h-0'}`}>
+                                    <div className="flex justify-between items-end mb-2 px-1">
+                                        <span className="text-white/40 text-[10px] font-bold uppercase">Duration</span>
+                                        <span className="font-mono text-xl font-bold text-white">{timerMinutes} <span className="text-sm text-white/50">min</span></span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="15"
+                                        value={timerMinutes}
+                                        onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
+                                        className="w-full h-2 bg-slate-950 rounded-full appearance-none cursor-pointer accent-sky-500"
+                                    />
+                                </div>
+                            </section>
+
+                            {/* Categories */}
+                            <section>
+                                <div className="flex items-center justify-between mb-4 px-2">
+                                    <h2 className="text-sm font-bold tracking-widest text-teal-400 flex items-center gap-2 uppercase">
+                                        <i className="fa-solid fa-layer-group"></i> Mission
+                                    </h2>
+                                    
+                                    {/* Mode Toggle */}
+                                    <div className="flex bg-slate-950/50 p-1 rounded-lg border border-white/5">
                                         <button 
-                                            onClick={() => removePlayer(i)}
-                                            disabled={players.length <= MIN_PLAYERS}
-                                            className={`w-6 h-6 flex items-center justify-center rounded-full text-xs transition-colors 
-                                                ${players.length > MIN_PLAYERS 
-                                                    ? 'bg-slate-700 hover:bg-red-500 text-slate-400 hover:text-white' 
-                                                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                                }`}
+                                            onClick={() => setIsRandomMode(false)}
+                                            className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${!isRandomMode ? 'bg-white/10 text-white shadow-sm' : 'text-white/30 hover:text-white/60'}`}
                                         >
-                                            ✕
+                                            Select
+                                        </button>
+                                        <button 
+                                            onClick={() => setIsRandomMode(true)}
+                                            className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${isRandomMode ? 'bg-gradient-to-r from-brand-600 to-fuchsia-600 text-white shadow-sm' : 'text-white/30 hover:text-white/60'}`}
+                                        >
+                                            Random
                                         </button>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Timer Section */}
-                        <section className="mb-6 bg-glass rounded-[2rem] p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-bold flex items-center gap-2 text-blue-300">
-                                    <Icons.Timer size={20} /> <span className="tracking-tight">TIMER</span>
-                                </h2>
-                                <button 
-                                    onClick={() => {
-                                        setTimerEnabled(!timerEnabled);
-                                        if(navigator.vibrate) navigator.vibrate(10);
-                                    }}
-                                    className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${timerEnabled ? 'bg-blue-600' : 'bg-slate-700'}`}
-                                >
-                                    <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${timerEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                                </button>
-                            </div>
-                            
-                            <div className={`transition-all duration-300 overflow-hidden ${timerEnabled ? 'opacity-100 max-h-40' : 'opacity-30 max-h-0'}`}>
-                                <div className="flex justify-between items-center mb-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                                    <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Duration</span>
-                                    <span className="font-mono text-xl font-bold text-white">{timerMinutes} min</span>
                                 </div>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="15"
-                                    value={timerMinutes}
-                                    onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
-                                    className="w-full h-3 bg-slate-800 rounded-full appearance-none cursor-pointer accent-blue-500"
-                                />
-                            </div>
-                        </section>
 
-                        {/* Categories Section */}
-                        <section className="mb-8">
-                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-teal-300 px-2">
-                                <Icons.Settings size={20} /> <span className="tracking-tight">CATEGORIES</span>
-                            </h2>
-                            <div className="grid grid-cols-2 gap-3">
-                                {Object.keys(WORD_BANK).map(cat => {
-                                    const IconComp = CATEGORY_ICONS[cat] || Icons.Globe;
-                                    const isSelected = selectedCategories.includes(cat);
-                                    return (
-                                        <button
-                                            key={cat}
-                                            onClick={() => toggleCategory(cat)}
-                                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-[1.5rem] border transition-all duration-200 active:scale-95 ${
-                                                isSelected 
-                                                    ? 'bg-teal-500/10 border-teal-500/50 text-teal-100 shadow-[0_0_15px_rgba(45,212,191,0.1)]' 
-                                                    : 'bg-slate-900/40 border-slate-800 text-slate-500 hover:bg-slate-800'
-                                            }`}
-                                        >
-                                            <IconComp size={24} className={isSelected ? "text-teal-400" : "text-slate-600"} />
-                                            <span className="text-xs font-bold tracking-wide">{cat}</span>
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </section>
+                                {isRandomMode ? (
+                                    <div className="glass-panel rounded-[2rem] p-8 text-center animate-fadeIn border border-brand-500/20 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-brand-500/10 via-transparent to-fuchsia-500/10 opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                        <div className="relative z-10 py-8">
+                                            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-brand-500 to-fuchsia-600 rounded-3xl rotate-12 flex items-center justify-center shadow-lg shadow-brand-900/40 mb-6 group-hover:rotate-[20deg] group-hover:scale-110 transition-transform duration-500">
+                                                <i className="fa-solid fa-dice text-4xl text-white drop-shadow-md"></i>
+                                            </div>
+                                            <h3 className="text-2xl font-display font-bold text-white mb-2">Mystery Mode</h3>
+                                            <p className="text-white/50 text-sm max-w-[200px] mx-auto leading-relaxed">
+                                                The system will automatically select a random category for your mission.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fadeIn">
+                                        {DISPLAY_CATEGORIES.map(cat => {
+                                            const iconSource = CATEGORY_ICONS[cat];
+                                            const isSelected = selectedCategories.includes(cat);
+                                            const isSupercell = cat === 'Supercell';
+                                            
+                                            return (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => toggleCategory(cat)}
+                                                    onMouseDown={() => handleTouchStart(cat)}
+                                                    onMouseUp={handleTouchEnd}
+                                                    onMouseLeave={handleTouchEnd}
+                                                    onTouchStart={() => handleTouchStart(cat)}
+                                                    onTouchEnd={handleTouchEnd}
+                                                    className={`relative overflow-hidden flex flex-col items-center justify-center gap-3 p-4 rounded-[1.5rem] border transition-all duration-300 active:scale-95 group min-h-[110px]
+                                                        ${isSupercell 
+                                                            ? 'supercell-card shadow-lg shadow-blue-900/20 border-blue-400/20' 
+                                                            : (isSelected 
+                                                                ? 'glass-panel bg-teal-500/10 border-teal-500/40 text-teal-100 shadow-[0_0_20px_rgba(20,184,166,0.1)]' 
+                                                                : 'glass-panel-lighter border-white/5 text-slate-400 hover:bg-white/5 hover:border-white/10'
+                                                            )
+                                                        }
+                                                    `}
+                                                >
+                                                    <div className="relative z-10 flex flex-col items-center gap-2">
+                                                        <FaIcon 
+                                                            name={iconSource} 
+                                                            sizeClass="text-2xl" 
+                                                            className={`transition-all duration-300 ${isSupercell ? "drop-shadow-md brightness-125" : (isSelected ? "text-teal-400 scale-110" : "text-white/40 group-hover:text-white/70")}`} 
+                                                        />
+                                                        <span className={`text-xs font-bold tracking-wide transition-colors ${isSupercell ? 'text-white drop-shadow-md' : (isSelected ? 'text-white' : 'text-slate-500 group-hover:text-slate-300')}`}>{cat}</span>
+                                                    </div>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </section>
+                        </div>
                     </div>
 
-                    {/* Start Button */}
-                    <div className="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#020617] via-[#020617] to-transparent z-50">
-                        <div className="max-w-lg mx-auto">
+                    {/* Fixed Bottom Start Button */}
+                    <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#020617] via-[#020617] to-transparent z-50">
+                        <div className="max-w-lg mx-auto pb-[env(safe-area-inset-bottom)]">
                             <button
                                 onClick={() => {
-                                    if (players.length >= MIN_PLAYERS && selectedCategories.length > 0) {
+                                    if (players.length >= MIN_PLAYERS && (isRandomMode || selectedCategories.length > 0)) {
                                         if (navigator.vibrate) navigator.vibrate(30);
-                                        onStartGame(players, selectedCategories, timerEnabled ? timerMinutes * 60 : null);
+                                        onStartGame(players, isRandomMode ? [] : selectedCategories, timerEnabled ? timerMinutes * 60 : null, isRandomMode);
                                     }
                                 }}
-                                disabled={players.length < MIN_PLAYERS || selectedCategories.length === 0}
-                                className="w-full bg-white text-slate-950 font-black text-lg py-5 rounded-[1.5rem] shadow-xl shadow-white/10 disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                                disabled={players.length < MIN_PLAYERS || (!isRandomMode && selectedCategories.length === 0)}
+                                className="w-full bg-white text-slate-950 font-display font-bold text-lg py-5 rounded-[1.5rem] shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
                             >
-                                <Icons.Play fill="currentColor" size={24} /> 
-                                START GAME
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-200/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                <span className="relative z-10 flex items-center gap-3">
+                                    <i className="fa-solid fa-play text-sm"></i> START MISSION
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -357,96 +508,102 @@
             );
         };
 
-        // 2. Enhanced Card Reveal Flow
+        // 2. Card Reveal Screen
         const CardRevealScreen = ({ player, word, onNext, isLastPlayer }) => {
-            // Steps: 'handover' -> 'identify' -> 'reveal'
             const [step, setStep] = useState('handover'); 
             const [isRevealed, setIsRevealed] = useState(false);
-            const [swipeY, setSwipeY] = useState(0);
-
-            // Reset state when player changes
+            const [swipeX, setSwipeX] = useState(0);
+            const touchStartX = useRef(null);
+            
             useEffect(() => {
                 setStep('handover');
                 setIsRevealed(false);
-                setSwipeY(0);
+                setSwipeX(0);
             }, [player]);
 
-            const handleTouchMove = (e) => {
-                if (step !== 'identify') return;
-                const touch = e.touches[0];
-                // Simple logic: if user drags down significantly, reveal
-                // Or if we want a "hold" button, we can do that too. 
-                // Let's do a tap logic for simplicity but robust UI
+            const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+            const onTouchMove = (e) => {
+                if (touchStartX.current !== null && !isRevealed) {
+                    setSwipeX(e.touches[0].clientX - touchStartX.current);
+                }
+            };
+            const onTouchEnd = () => {
+                if (!isRevealed && Math.abs(swipeX) > 100) handleReveal();
+                else setSwipeX(0);
+                touchStartX.current = null;
+            };
+
+            const handleReveal = () => {
+                if (!isRevealed) {
+                    setIsRevealed(true);
+                    setStep('reveal');
+                    setSwipeX(0);
+                    if (navigator.vibrate) navigator.vibrate([30, 50]);
+                }
             };
 
             const renderHandover = () => (
-                <div className="flex flex-col items-center justify-center h-full text-center p-6 animate-slide-up">
-                    <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 border border-slate-700">
-                         <Icons.User size={48} className="text-slate-400" />
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-slide-up relative z-10">
+                    <div className="w-32 h-32 rounded-full flex items-center justify-center mb-10 relative">
+                        <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full animate-pulse-slow"></div>
+                        <div className="glass-panel w-full h-full rounded-full flex items-center justify-center border border-white/10">
+                            <i className="fa-solid fa-user-secret text-white/50 text-5xl"></i>
+                        </div>
                     </div>
-                    <h2 className="text-slate-500 text-sm font-bold uppercase tracking-[0.3em] mb-4">Pass Device To</h2>
-                    <h1 className="text-5xl font-black text-white mb-12">{player}</h1>
                     
-                    <div className="absolute bottom-10 w-full max-w-sm px-6">
+                    <h2 className="text-brand-400 text-xs font-bold uppercase tracking-[0.4em] mb-4">Classified Info For</h2>
+                    <h1 className="text-6xl font-display font-black text-white mb-16 drop-shadow-2xl">{player}</h1>
+                    
+                    <div className="w-full max-w-sm">
                         <button 
                             onClick={() => {
                                 setStep('identify');
                                 if (navigator.vibrate) navigator.vibrate(20);
                             }}
-                            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-5 rounded-[1.5rem] transition-all active:scale-95 flex items-center justify-center gap-3"
+                            className="w-full glass-panel hover:bg-white/5 border border-white/10 text-white font-display font-bold text-lg py-5 rounded-[1.5rem] transition-all active:scale-95 flex items-center justify-center gap-3"
                         >
-                            <Icons.Check size={20} /> I am {player}
+                            <i className="fa-solid fa-fingerprint text-brand-400"></i> Verify Identity
                         </button>
                     </div>
                 </div>
             );
 
             const renderIdentity = () => (
-                <div className="flex flex-col items-center justify-center h-full w-full p-6 relative">
-                    <div className="absolute top-0 left-0 w-full h-full bg-slate-900/50 backdrop-blur-sm z-0"></div>
+                <div className="flex flex-col items-center justify-center h-full w-full p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full bg-slate-950/90 backdrop-blur-sm z-0"></div>
                     
-                    {/* The Card */}
                     <div 
-                        className="relative w-full max-w-xs aspect-[3/4] perspective-1000 z-10"
-                        onClick={() => {
-                            if (!isRevealed) {
-                                setIsRevealed(true);
-                                setStep('reveal');
-                                if (navigator.vibrate) navigator.vibrate([30, 50]);
-                            }
-                        }}
+                        className="relative w-full max-w-xs aspect-[3/4] perspective-1000 z-10 select-none"
+                        onClick={handleReveal}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
                     >
-                         <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d preserve-3d cursor-pointer ${isRevealed ? 'rotate-y-180' : ''}`}>
-                            
-                            {/* Front (Hidden State) */}
+                         <div 
+                            className={`relative w-full h-full transition-transform duration-700 transform-style-3d preserve-3d cursor-pointer ${isRevealed ? 'rotate-y-180' : 'rotate-y-0'}`}
+                            style={!isRevealed && swipeX ? { transform: `rotateY(${swipeX / 5}deg)` } : {}}
+                         >
+                            {/* Front */}
                             <div className="absolute inset-0 backface-hidden">
-                                <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] border border-slate-700 shadow-2xl flex flex-col items-center justify-center p-8 group">
-                                    <div className="w-20 h-2 bg-slate-700 rounded-full mb-12 opacity-50"></div>
-                                    <div className="w-32 h-32 bg-slate-800 rounded-full flex items-center justify-center mb-8 ring-4 ring-slate-800/50 group-hover:scale-105 transition-transform duration-500">
-                                        <Icons.Lock size={48} className="text-slate-400" />
+                                <div className="w-full h-full bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center justify-center p-8 group relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                                    <div className="w-full h-full absolute top-0 left-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+
+                                    <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 ring-1 ring-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                        <i className="fa-solid fa-lock text-white/30 text-4xl group-hover:text-white/50 transition-colors"></i>
                                     </div>
-                                    <h3 className="text-white font-black text-2xl mb-2">SECRET ROLE</h3>
-                                    <p className="text-slate-400 font-medium text-sm">Tap card to reveal</p>
-                                    <div className="absolute bottom-8 animate-bounce opacity-50">
-                                        <Icons.Eye size={24} className="text-slate-400" />
+                                    <h3 className="text-white font-display font-bold text-2xl mb-2">TOP SECRET</h3>
+                                    <p className="text-white/40 font-medium text-sm text-center tracking-wide">Tap or Swipe to decrypt</p>
+                                    
+                                    <div className="absolute bottom-10 flex gap-3 items-center text-white/20 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                                        <span>Decrypt</span> <i className="fa-solid fa-chevron-right"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Back (Revealed State) - Logic is handled in renderReveal to keep DOM clean, but for 3D flip effect we put content here visually if needed. 
-                                However, to keep it simple and sleek, we will transition to renderReveal state fully. 
-                                Actually, for the flip to work, we need the backface here.
-                            */}
+                            {/* Back Placeholder (Real content in renderReveal) */}
                              <div className="absolute inset-0 rotate-y-180 backface-hidden">
-                                <div className={`w-full h-full rounded-[2.5rem] border shadow-2xl flex flex-col items-center justify-center p-8 ${
-                                    word === "IMPOSTER" ? 'bg-red-950 border-red-500/30' : 'bg-teal-950 border-teal-500/30'
-                                }`}>
-                                     {/* Content mirrors renderReveal but just for the flip animation */}
-                                     <div className="text-center">
-                                        <p className="text-xs uppercase tracking-widest font-bold mb-4 opacity-50">Your Role</p>
-                                        <h2 className="text-3xl font-black">{word}</h2>
-                                     </div>
-                                </div>
+                                <div className="w-full h-full rounded-[2.5rem] bg-slate-800 border border-white/10"></div>
                             </div>
                         </div>
                     </div>
@@ -454,59 +611,56 @@
             );
 
             const renderReveal = () => (
-                 <div className="flex flex-col items-center justify-center h-full p-6 animate-fadeIn">
+                 <div className="flex flex-col items-center justify-center h-full p-6 animate-fadeIn relative z-10">
                     <div className={`w-full max-w-sm aspect-[3/4] rounded-[2.5rem] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl border ${
                          word === "IMPOSTER" 
-                            ? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/30' 
-                            : 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/30'
+                            ? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
+                            : 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
                     }`}>
-                        {/* Background Effects */}
-                        <div className={`absolute top-0 w-full h-1/2 opacity-20 blur-3xl ${word === 'IMPOSTER' ? 'bg-red-500' : 'bg-teal-500'}`}></div>
+                        <div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
 
-                        <p className={`text-xs uppercase tracking-[0.3em] font-bold mb-8 ${word === 'IMPOSTER' ? 'text-red-300' : 'text-teal-300'}`}>Your Secret Role</p>
+                        <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-10 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
                         
                         {word === "IMPOSTER" ? (
                             <>
-                                <div className="w-32 h-32 bg-red-500/10 rounded-full flex items-center justify-center mb-8 ring-1 ring-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
-                                    <span className="text-6xl">🤫</span>
+                                <div className="w-32 h-32 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/30 shadow-[0_0_60px_rgba(239,68,68,0.2)] animate-pulse">
+                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" className="w-20 h-20 drop-shadow-lg" />
                                 </div>
-                                <h2 className="text-5xl font-black text-red-500 tracking-tighter mb-4 drop-shadow-sm">IMPOSTER</h2>
-                                <p className="text-red-200/70 text-sm font-medium leading-relaxed max-w-[200px]">Blend in. Don't let them know you don't know the word.</p>
+                                <h2 className="text-5xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
+                                <p className="text-red-200/60 text-sm font-medium leading-relaxed max-w-[220px]">Blend in. Deceive. Don't let them know you are the spy.</p>
                             </>
                         ) : (
                             <>
-                                <div className="w-32 h-32 bg-teal-500/10 rounded-full flex items-center justify-center mb-8 ring-1 ring-teal-500/50 shadow-[0_0_40px_rgba(20,184,166,0.2)]">
-                                    <span className="text-6xl">📝</span>
+                                <div className="w-32 h-32 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-teal-500/30 shadow-[0_0_60px_rgba(20,184,166,0.2)]">
+                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" className="w-20 h-20 drop-shadow-lg" />
                                 </div>
-                                <h2 className="text-4xl font-black text-white mb-4 drop-shadow-sm">{word}</h2>
-                                <p className="text-teal-200/70 text-sm font-medium leading-relaxed max-w-[200px]">This is the secret word. Remember it.</p>
+                                <h2 className="text-4xl font-display font-bold text-white mb-4 drop-shadow-sm">{word}</h2>
+                                <p className="text-teal-200/60 text-sm font-medium leading-relaxed max-w-[220px]">Memorize this word. It proves your innocence.</p>
                             </>
                         )}
                     </div>
 
-                    <div className="w-full max-w-sm mt-8 px-2">
+                    <div className="w-full max-w-sm mt-8">
                         <button 
                             onClick={() => {
                                 if(navigator.vibrate) navigator.vibrate(20);
                                 onNext();
                             }}
-                            className="w-full bg-white text-slate-950 py-5 rounded-[1.5rem] font-black shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                            className="w-full bg-white hover:bg-slate-200 text-slate-950 py-5 rounded-[1.5rem] font-display font-bold text-lg shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-95 transition-all flex items-center justify-center gap-3"
                         >
-                            <Icons.EyeOff size={20} />
-                            {isLastPlayer ? "HIDE & START GAME" : "HIDE & PASS"}
+                            <i className="fa-solid fa-check-circle text-lg"></i>
+                            {isLastPlayer ? "START GAME" : "NEXT PLAYER"}
                         </button>
                     </div>
                 </div>
             );
 
             return (
-                <div className="h-full bg-slate-950 relative overflow-hidden">
-                    {/* Persistent Background */}
+                <div className="h-[100dvh] relative overflow-hidden">
                     <div className="absolute inset-0 pointer-events-none">
-                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/5 rounded-full blur-[100px]"></div>
-                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/5 rounded-full blur-[100px]"></div>
+                         <div className="blob bg-brand-600 top-[-10%] left-[-10%] w-[50%] h-[50%]"></div>
+                         <div className="blob bg-cyan-600 bottom-[-10%] right-[-10%] w-[50%] h-[50%] animation-delay-2000"></div>
                     </div>
-
                     <div className="relative z-10 h-full">
                         {step === 'handover' && renderHandover()}
                         {step === 'identify' && renderIdentity()}
@@ -543,73 +697,74 @@
             const strokeDashoffset = strokeDasharray * (1 - progress);
 
             return (
-                <div className="h-full flex flex-col items-center justify-between bg-slate-950 p-6 text-white overflow-hidden relative">
-                    {/* Background */}
+                <div className="h-[100dvh] flex flex-col items-center justify-between p-6 relative overflow-hidden">
                     <div className="absolute inset-0 pointer-events-none">
                         <div className={`absolute inset-0 bg-red-600/10 transition-opacity duration-1000 ${timeLeft < 30 && active ? 'opacity-100 animate-pulse' : 'opacity-0'}`}></div>
+                        <div className="blob bg-brand-900/30 top-0 left-0 w-full h-full"></div>
                     </div>
 
-                    {/* Header: First Questioner Only - NO CATEGORY */}
-                    <div className="w-full mt-8 bg-glass p-5 rounded-[1.5rem] flex items-center gap-4 z-10">
-                        <div className="bg-indigo-500/20 p-3 rounded-full">
-                            <Icons.Users size={24} className="text-indigo-300" />
+                    {/* Header */}
+                    <div className="w-full mt-8 glass-panel p-4 rounded-[1.5rem] flex items-center gap-4 z-10 border-l-2 border-l-brand-500">
+                        <div className="bg-brand-500/20 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i className="fa-solid fa-comments text-brand-300"></i>
                         </div>
                         <div>
-                            <p className="text-indigo-300 text-[10px] uppercase font-bold tracking-wider mb-0.5">First Questioner</p>
-                            <p className="text-white font-bold text-xl">{firstPlayer}</p>
+                            <p className="text-brand-300/70 text-[10px] uppercase font-bold tracking-widest mb-1">First Questioner</p>
+                            <p className="text-white font-display font-bold text-xl tracking-wide">{firstPlayer}</p>
                         </div>
                     </div>
 
-                    {/* Main Timer Display */}
+                    {/* Timer */}
                     <div className="flex-1 flex flex-col items-center justify-center z-10 w-full relative">
                         {duration ? (
-                            <div className="relative">
-                                {/* Glow Effect */}
-                                <div className={`absolute inset-0 rounded-full blur-[80px] transition-all duration-1000 ${timeLeft < 30 ? 'bg-red-500/20' : 'bg-blue-500/10'}`}></div>
-                                
+                            <div className="relative transform scale-90 sm:scale-100 transition-transform">
+                                <div className={`absolute inset-0 rounded-full blur-[100px] transition-all duration-1000 ${timeLeft < 30 ? 'bg-red-500/20' : 'bg-brand-500/10'}`}></div>
                                 <div className="relative">
-                                    <svg className="w-72 h-72 transform -rotate-90 drop-shadow-2xl">
-                                        <circle cx="144" cy="144" r="120" stroke="#1e293b" strokeWidth="8" fill="transparent" />
+                                    {/* Track */}
+                                    <svg className="w-72 h-72 transform -rotate-90">
+                                        <circle cx="144" cy="144" r="120" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" />
                                         <circle 
                                             cx="144" cy="144" r="120" stroke="currentColor" strokeWidth="8" fill="transparent" 
-                                            className={`${timeLeft < 30 ? 'text-red-500' : 'text-blue-500'} transition-colors duration-1000`}
+                                            className={`${timeLeft < 30 ? 'text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]' : 'text-brand-500 shadow-[0_0_20px_rgba(139,92,246,0.5)]'} transition-all duration-1000 drop-shadow-xl`}
                                             strokeDasharray={strokeDasharray}
                                             strokeDashoffset={strokeDashoffset}
                                             strokeLinecap="round"
                                         />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className={`text-7xl font-mono font-black tracking-tighter tabular-nums ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                                        <span className={`text-7xl font-mono font-bold tracking-tighter tabular-nums ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
                                             {formatTime(timeLeft)}
                                         </span>
-                                        <span className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-4">
+                                        <span className="text-white/30 text-[10px] font-bold uppercase tracking-[0.4em] mt-4 ml-1">
                                             {timeLeft === 0 ? "TIME'S UP" : "REMAINING"}
                                         </span>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center py-12 px-6 bg-slate-900/50 rounded-[2rem] border border-slate-800">
-                                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Icons.Timer size={32} className="text-slate-400" />
+                            <div className="text-center py-16 px-8 glass-panel rounded-[2.5rem] border border-white/5">
+                                <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-white/10">
+                                    <i className="fa-solid fa-infinity text-white/50 text-4xl"></i>
                                 </div>
-                                <h2 className="text-3xl font-black mb-3 text-white">Untimed Mode</h2>
-                                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs mx-auto">Take your time. Ask questions. Watch for nervous habits.</p>
+                                <h2 className="text-3xl font-display font-bold mb-4 text-white">Untimed Mode</h2>
+                                <p className="text-white/40 text-sm font-medium leading-relaxed max-w-xs mx-auto">
+                                    Analyze behavior. Watch for nervous ticks. Take your time to find the spy.
+                                </p>
                             </div>
                         )}
                     </div>
 
-                    {/* Action Button */}
-                    <div className="w-full z-10 pb-6">
+                    {/* Action */}
+                    <div className="w-full z-10 pb-[env(safe-area-inset-bottom)] mb-6">
                         <button 
                             onClick={() => {
                                 if(navigator.vibrate) navigator.vibrate(50);
                                 onEndGame();
                             }}
-                            className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black text-xl py-5 rounded-[1.5rem] shadow-xl shadow-red-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 border border-red-500/20"
+                            className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-display font-bold text-lg py-5 rounded-[1.5rem] shadow-[0_0_40px_rgba(220,38,38,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 border border-red-400/30"
                         >
-                            <Icons.Trophy size={24} fill="currentColor" />
-                            REVEAL IMPOSTER
+                            <i className="fa-solid fa-fingerprint text-xl"></i>
+                            IDENTIFY IMPOSTER
                         </button>
                     </div>
                 </div>
@@ -619,24 +774,27 @@
         // 4. Results Screen
         const ResultScreen = ({ imposterName, word, onRestart }) => {
             return (
-                <div className="h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-white text-center overflow-hidden relative">
+                <div className="h-[100dvh] flex flex-col items-center justify-center p-6 text-center overflow-hidden relative">
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="blob bg-red-600/20 top-0 left-0 w-full h-full"></div>
+                    </div>
                     
-                    <div className="relative mb-12 animate-float w-full max-w-sm">
-                        <div className="absolute inset-0 bg-red-600 rounded-[3rem] blur-[60px] opacity-20"></div>
-                        <div className="relative bg-gradient-to-br from-slate-900 to-slate-950 p-10 rounded-[2.5rem] border border-red-500/20 shadow-2xl">
-                            <div className="text-xs font-bold text-red-400 uppercase tracking-[0.3em] mb-8">The Imposter Was</div>
-                            <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <span className="text-5xl">🤫</span>
+                    <div className="relative mb-12 animate-float w-full max-w-sm z-10">
+                        <div className="absolute inset-0 bg-red-500 rounded-[2.5rem] blur-[50px] opacity-20"></div>
+                        <div className="relative glass-panel p-10 rounded-[2.5rem] border border-red-500/30">
+                            <div className="text-[10px] font-bold text-red-400 uppercase tracking-[0.4em] mb-10">Identity Confirmed</div>
+                            <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
+                                <img src="https://em-content.zobj.net/source/microsoft-teams/400/beaming-face-with-smiling-eyes_1f601.png" alt="Beaming Face" className="w-24 h-24 drop-shadow-lg" />
                             </div>
-                            <span className="text-4xl font-black text-white block break-words leading-tight">
+                            <span className="text-4xl font-display font-bold text-white block break-words leading-tight">
                                 {imposterName}
                             </span>
                         </div>
                     </div>
 
-                    <div className="bg-glass p-6 rounded-[1.5rem] w-full max-w-sm mb-8">
-                        <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-2">The Secret Word</p>
-                        <p className="text-2xl font-black text-teal-400">{word}</p>
+                    <div className="glass-panel p-6 rounded-[2rem] w-full max-w-sm mb-10 border border-white/5 z-10">
+                        <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-3">The Secret Word</p>
+                        <p className="text-3xl font-display font-bold text-teal-400 tracking-wide">{word}</p>
                     </div>
 
                     <button 
@@ -644,9 +802,9 @@
                             if(navigator.vibrate) navigator.vibrate(20);
                             onRestart();
                         }}
-                        className="w-full max-w-sm bg-white text-slate-950 py-5 rounded-[1.5rem] font-black text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                        className="w-full max-w-sm bg-white hover:bg-slate-200 text-slate-950 py-5 rounded-[1.5rem] font-display font-bold text-lg shadow-[0_0_30px_rgba(255,255,255,0.15)] active:scale-95 transition-all flex items-center justify-center gap-3 z-10"
                     >
-                        <Icons.Refresh size={20} /> PLAY AGAIN
+                        <i className="fa-solid fa-rotate-right text-lg"></i> PLAY AGAIN
                     </button>
                 </div>
             );
@@ -659,15 +817,24 @@
                 players: [],
                 imposterIndex: -1,
                 secretWord: '',
-                category: '',
                 duration: null,
                 firstPlayer: ''
             });
             const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
-            const startGame = (players, categories, duration) => {
-                const randomCat = categories[Math.floor(Math.random() * categories.length)];
-                const words = WORD_BANK[randomCat] || WORD_BANK['Movies'];
+            const startGame = (players, selectedCategories, duration, isRandomMode) => {
+                // If random mode or user picked 'Random' explicitly (backwards compat), select one randomly
+                const useRandom = isRandomMode || (selectedCategories && selectedCategories.length === 0);
+
+                let finalCategory;
+                if (useRandom) {
+                    const allActualCategories = Object.keys(WORD_BANK);
+                    finalCategory = allActualCategories[Math.floor(Math.random() * allActualCategories.length)];
+                } else {
+                    finalCategory = selectedCategories[Math.floor(Math.random() * selectedCategories.length)];
+                }
+
+                const words = WORD_BANK[finalCategory];
                 const secretWord = words[Math.floor(Math.random() * words.length)];
                 const imposterIndex = Math.floor(Math.random() * players.length);
                 
@@ -680,7 +847,6 @@
                     players,
                     imposterIndex,
                     secretWord,
-                    category: randomCat, // Stored but hidden during game
                     duration,
                     firstPlayer: players[potentialFirst]
                 });
@@ -701,21 +867,19 @@
             const handleRestart = () => setGameState('setup');
 
             return (
-                <div className="w-full h-screen overflow-hidden bg-slate-950 font-sans select-none text-slate-100">
-                    {gameState === 'setup' && (
-                        <SetupScreen onStartGame={startGame} />
-                    )}
-
+                <div className="w-full h-full text-slate-200 font-sans selection:bg-brand-500/30">
+                    <div className="fixed inset-0 bg-[#020617] -z-10"></div>
+                    
+                    {gameState === 'setup' && <SetupScreen onStartGame={startGame} />}
                     {gameState === 'pass' && (
                         <CardRevealScreen 
-                            key={currentPlayerIndex} // Forces remount for state reset
+                            key={currentPlayerIndex}
                             player={gameData.players[currentPlayerIndex]}
                             word={currentPlayerIndex === gameData.imposterIndex ? "IMPOSTER" : gameData.secretWord}
                             onNext={handleNextPlayer}
                             isLastPlayer={currentPlayerIndex === gameData.players.length - 1}
                         />
                     )}
-
                     {gameState === 'active' && (
                         <GameTimerScreen 
                             duration={gameData.duration}
@@ -723,7 +887,6 @@
                             firstPlayer={gameData.firstPlayer}
                         />
                     )}
-
                     {gameState === 'result' && (
                         <ResultScreen 
                             imposterName={gameData.players[gameData.imposterIndex]}
