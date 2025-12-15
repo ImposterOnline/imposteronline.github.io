@@ -905,60 +905,49 @@
         };
 
         // 3. Game Timer Screen
-        const GameTimerScreen = ({ duration, onEndGame, firstPlayer, category, speakCategory }) => {
+        const GameTimerScreen = ({ duration, onEndGame, firstPlayer, category, speakCategory, alarmSoundRef }) => {
             const [timeLeft, setTimeLeft] = useState(duration || 0);
             const [active, setActive] = useState(!!duration);
             
-            // Audio Refs (Lazy Initialization)
-            const alarmRef = useRef(null);
-
-            // Initialize audio loop on mount
             useEffect(() => {
-                // Initialize audio objects once
-                if (!alarmRef.current) {
-                    alarmRef.current = new Audio("https://www.dropbox.com/scl/fi/tdwfnelbxoo06kn1za6on/01HSGT2Z9YWSYE1X5KRHAEH9G3.mp3?rlkey=btqqywkoto0v6xbrc3w758qde&raw=1");
-                    alarmRef.current.loop = true;
-                }
-                
-                // Speak Category
                 if (speakCategory && category) {
                     const utterance = new SpeechSynthesisUtterance(`The category is ${category}`);
                     utterance.rate = 0.9;
                     window.speechSynthesis.speak(utterance);
                 }
-
-                // Cleanup audio on unmount - Stops ALL music when leaving this screen
+                // Stop any lingering sounds from previous screens
                 return () => {
-                    if (alarmRef.current) {
-                        alarmRef.current.pause();
-                        alarmRef.current.currentTime = 0;
+                    const sound = alarmSoundRef.current;
+                    if (sound) {
+                        sound.pause();
+                        sound.currentTime = 0;
                     }
                 };
-            }, [category, speakCategory]);
+            }, [category, speakCategory, alarmSoundRef]);
 
             useEffect(() => {
                 if (!active || !duration) return;
                 
                 if (timeLeft <= 0) {
                     setActive(false);
-                    // Trigger Alarm
-                    if (alarmRef.current) {
-                        alarmRef.current.play().catch(e => console.log("Audio autoplay prevented"));
+                    const sound = alarmSoundRef.current;
+                    if (sound) {
+                        sound.play().catch(e => console.log("Alarm sound autoplay prevented"));
                     }
                     if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
                     return;
                 }
                 const interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
                 return () => clearInterval(interval);
-            }, [active, timeLeft, duration]);
+            }, [active, timeLeft, duration, alarmSoundRef]);
 
             const handleIdentifyImposter = () => {
                 if(navigator.vibrate) navigator.vibrate(50);
                 
-                // Stop alarm
-                if (alarmRef.current) {
-                    alarmRef.current.pause();
-                    alarmRef.current.currentTime = 0;
+                const sound = alarmSoundRef.current;
+                if (sound) {
+                    sound.pause();
+                    sound.currentTime = 0;
                 }
                 
                 onEndGame();
@@ -1047,26 +1036,21 @@
         };
 
         // 4. Results Screen
-        const ResultScreen = ({ imposterName, word, onRestart }) => {
-            const resultSoundRef = useRef(null);
-            
+        const ResultScreen = ({ imposterName, word, onRestart, resultSoundRef }) => {
             useEffect(() => {
-                // Initialize and play the result sound when the component mounts
-                if (!resultSoundRef.current) {
-                    resultSoundRef.current = new Audio("https://www.dropbox.com/scl/fi/l9k4wr93e20eb9v1c86c2/01JB990HCJZNAKJDSE9R0ZF2CQ.mp3?rlkey=mti7p26vh1j0hvvyapr0aly89&raw=1");
+                const sound = resultSoundRef.current;
+                if (sound) {
+                    sound.currentTime = 0; // Ensure it starts from the beginning
+                    sound.play().catch(e => console.error("Result sound autoplay was prevented.", e));
                 }
                 
-                resultSoundRef.current.play().catch(e => console.error("Result sound autoplay was prevented.", e));
-                
-                // This is the cleanup function that runs when the component unmounts
+                // Cleanup function runs when the component unmounts
                 return () => {
-                    if (resultSoundRef.current) {
-                        resultSoundRef.current.pause();
-                        resultSoundRef.current.currentTime = 0;
+                    if (sound) {
+                        sound.pause();
                     }
                 };
-            }, []); // The empty array [] means this effect runs only once on mount and cleanup on unmount
-
+            }, [resultSoundRef]);
 
             return (
                 <div className="h-[100dvh] flex flex-col items-center justify-center p-6 text-center overflow-hidden relative">
@@ -1079,7 +1063,7 @@
                         <div className="relative glass-panel p-10 rounded-[2.5rem] border border-red-500/30">
                             <div className="text-[10px] font-bold text-red-400 uppercase tracking-[0.4em] mb-10">Identity Confirmed</div>
                             <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
-                                <img src="https://em-content.zobj.net/source/microsoft-teams/400/beaming-face-with-smiling-eyes_1f601.png" alt="Beaming Face" draggable="false" className="w-24 h-24 drop-shadow-lg" />
+                                <img src="https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-skin-tone_1f977-1f3fd_1f3fd.png" alt="Beaming Face" draggable="false" className="w-24 h-24 drop-shadow-lg" />
                             </div>
                             <span className="text-4xl font-display font-bold text-white block break-words leading-tight">
                                 {imposterName}
@@ -1120,6 +1104,17 @@
             });
             const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
+            // Create refs for audio objects to be initialized once
+            const alarmSoundRef = useRef(null);
+            const resultSoundRef = useRef(null);
+
+            // Initialize all audio objects on app start
+            useEffect(() => {
+                alarmSoundRef.current = new Audio("https://www.dropbox.com/scl/fi/tdwfnelbxoo06kn1za6on/01HSGT2Z9YWSYE1X5KRHAEH9G3.mp3?rlkey=btqqywkoto0v6xbrc3w758qde&raw=1");
+                alarmSoundRef.current.loop = true;
+                resultSoundRef.current = new Audio("https://www.dropbox.com/scl/fi/l9k4wr93e20eb9v1c86c2/01JB990HCJZNAKJDSE9R0ZF2CQ.mp3?rlkey=mti7p26vh1j0hvvyapr0aly89&raw=1");
+            }, []);
+
             // Preloading logic
             useEffect(() => {
                 const preloadAssets = (urls) => {
@@ -1130,12 +1125,9 @@
                                 img.src = url;
                                 img.onload = resolve;
                                 img.onerror = resolve; // Resolve even on error
-                            } else if (url.match(/\.mp3$/)) {
-                                const audio = new Audio();
-                                audio.src = url;
-                                audio.addEventListener('canplaythrough', resolve, { once: true });
-                                audio.addEventListener('error', resolve, { once: true });
                             } else {
+                                // Audio is now pre-initialized, so we don't need to preload it here.
+                                // The browser will start fetching it when the Audio object is created.
                                 resolve();
                             }
                         });
@@ -1143,7 +1135,7 @@
                     return Promise.all(promises);
                 };
 
-                // Gather all asset URLs
+                // Gather all image asset URLs
                 const imageIcons = Object.values(CATEGORY_ICONS).flat();
                 const otherImages = [
                     "https://www.clashchamps.com/wp-content/uploads/2024/06/czJOx2-Q.png",
@@ -1152,16 +1144,13 @@
                     "https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png",
                     "https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png",
                     "https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png",
-                    "https://em-content.zobj.net/source/microsoft-teams/400/beaming-face-with-smiling-eyes_1f601.png"
+                    "https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-skin-tone_1f977-1f3fd_1f3fd.png",
+                    "https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png"
                 ];
-                const sounds = [
-                    "https://www.dropbox.com/scl/fi/tdwfnelbxoo06kn1za6on/01HSGT2Z9YWSYE1X5KRHAEH9G3.mp3?rlkey=btqqywkoto0v6xbrc3w758qde&raw=1",
-                    "https://www.dropbox.com/scl/fi/l9k4wr93e20eb9v1c86c2/01JB990HCJZNAKJDSE9R0ZF2CQ.mp3?rlkey=mti7p26vh1j0hvvyapr0aly89&raw=1"
-                ];
+                
+                const allImageAssets = [...imageIcons, ...otherImages];
 
-                const allAssets = [...imageIcons, ...otherImages, ...sounds];
-
-                const assetPromise = preloadAssets(allAssets);
+                const assetPromise = preloadAssets(allImageAssets);
                 const minTimePromise = new Promise(resolve => setTimeout(resolve, 3000)); // 3-second minimum
 
                 Promise.all([assetPromise, minTimePromise]).then(() => {
@@ -1208,7 +1197,15 @@
             };
 
             const handleEndGame = () => setGameState('result');
-            const handleRestart = () => setGameState('setup');
+            const handleRestart = () => {
+                // Stop the result sound before going back to setup
+                const sound = resultSoundRef.current;
+                if (sound) {
+                    sound.pause();
+                    sound.currentTime = 0;
+                }
+                setGameState('setup');
+            };
 
             return (
                 <div className="w-full h-full text-slate-200 font-sans selection:bg-brand-500/30">
@@ -1233,6 +1230,7 @@
                                     firstPlayer={gameData.firstPlayer}
                                     category={gameData.category}
                                     speakCategory={gameData.speakCategory}
+                                    alarmSoundRef={alarmSoundRef}
                                 />
                             )}
                             {gameState === 'result' && (
@@ -1240,6 +1238,7 @@
                                     imposterName={gameData.players[gameData.imposterIndex]}
                                     word={gameData.secretWord}
                                     onRestart={handleRestart}
+                                    resultSoundRef={resultSoundRef}
                                 />
                             )}
                         </>
