@@ -86,6 +86,13 @@
             -webkit-user-select: none;
         }
         
+        /* Disable image dragging and long-press menus */
+        img {
+            -webkit-user-drag: none;
+            user-drag: none;
+            -webkit-touch-callout: none;
+        }
+
         /* Modern Glassmorphism */
         .glass-panel {
             background: rgba(15, 23, 42, 0.6);
@@ -300,6 +307,7 @@
                                 key={url} 
                                 src={url} 
                                 alt="icon" 
+                                draggable="false"
                                 className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-1000 ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`} 
                              />
                         ))}
@@ -308,7 +316,7 @@
             }
 
             if (name.startsWith('http')) {
-                return <img src={name} alt="icon" className={`w-8 h-8 object-contain ${className}`} />;
+                return <img src={name} alt="icon" draggable="false" className={`w-8 h-8 object-contain ${className}`} />;
             }
             return <i className={`fa-solid ${name} ${sizeClass} ${className}`}></i>;
         };
@@ -317,7 +325,9 @@
         const CategoryInfoModal = ({ category, onClose }) => {
             if (!category) return null;
             
-            const examples = WORD_BANK[category].slice(0, 8).join(", ");
+            const categoryWords = WORD_BANK[category];
+            const examples = categoryWords.slice(0, 8).join(", ");
+            const remainingCount = categoryWords.length - 8;
             const icon = CATEGORY_ICONS[category];
 
             return (
@@ -341,7 +351,7 @@
                                 <i className="fa-solid fa-list-ul text-brand-400 text-xs"></i> Examples
                             </h3>
                             <p className="text-white/90 text-sm leading-relaxed">
-                                {examples}, and more...
+                                {examples}{remainingCount > 0 ? `, and ${remainingCount}+` : ''}
                             </p>
                         </div>
                         
@@ -721,7 +731,7 @@
                         <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full animate-pulse-slow"></div>
                         <div className="glass-panel w-full h-full rounded-full flex items-center justify-center border border-white/10">
                             {/* Replaced fa-user-secret with image */}
-                            <img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Detective" className="w-20 h-20" />
+                            <img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Detective" draggable="false" className="w-20 h-20" />
                         </div>
                     </div>
                     
@@ -765,7 +775,7 @@
 
                                     <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 ring-1 ring-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                                         {/* Replaced fa-lock with image */}
-                                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png" alt="Locked" className="w-12 h-12" />
+                                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png" alt="Locked" draggable="false" className="w-12 h-12" />
                                     </div>
                                     <h3 className="text-white font-display font-bold text-2xl mb-2">TOP SECRET</h3>
                                     <p className="text-white/40 font-medium text-sm text-center tracking-wide">Tap or Swipe to decrypt</p>
@@ -799,7 +809,7 @@
                         {word === "IMPOSTER" ? (
                             <>
                                 <div className="w-32 h-32 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/30 shadow-[0_0_60px_rgba(239,68,68,0.2)] animate-pulse">
-                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" className="w-20 h-20 drop-shadow-lg" />
+                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-20 h-20 drop-shadow-lg" />
                                 </div>
                                 <h2 className="text-5xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
                                 <p className="text-red-200/60 text-sm font-medium leading-relaxed max-w-[220px]">Blend in. Deceive. Don't let them know you are the spy.</p>
@@ -807,7 +817,7 @@
                         ) : (
                             <>
                                 <div className="w-32 h-32 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-teal-500/30 shadow-[0_0_60px_rgba(20,184,166,0.2)]">
-                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" className="w-20 h-20 drop-shadow-lg" />
+                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-20 h-20 drop-shadow-lg" />
                                 </div>
                                 <h2 className="text-4xl font-display font-bold text-white mb-4 drop-shadow-sm">{word}</h2>
                                 <p className="text-teal-200/60 text-sm font-medium leading-relaxed max-w-[220px]">Memorize this word. It proves your innocence.</p>
@@ -852,7 +862,6 @@
             
             // Audio Refs (Lazy Initialization)
             const alarmRef = useRef(null);
-            const identifyRef = useRef(null);
 
             // Initialize audio loop on mount
             useEffect(() => {
@@ -860,9 +869,6 @@
                 if (!alarmRef.current) {
                     alarmRef.current = new Audio("https://www.dropbox.com/scl/fi/tdwfnelbxoo06kn1za6on/01HSGT2Z9YWSYE1X5KRHAEH9G3.mp3?rlkey=btqqywkoto0v6xbrc3w758qde&raw=1");
                     alarmRef.current.loop = true;
-                }
-                if (!identifyRef.current) {
-                    identifyRef.current = new Audio("https://www.dropbox.com/scl/fi/l9k4wr93e20eb9v1c86c2/01JB990HCJZNAKJDSE9R0ZF2CQ.mp3?rlkey=mti7p26vh1j0hvvyapr0aly89&raw=1");
                 }
                 
                 // Speak Category
@@ -877,10 +883,6 @@
                     if (alarmRef.current) {
                         alarmRef.current.pause();
                         alarmRef.current.currentTime = 0;
-                    }
-                    if (identifyRef.current) {
-                        identifyRef.current.pause();
-                        identifyRef.current.currentTime = 0;
                     }
                 };
             }, [category, speakCategory]);
@@ -908,11 +910,6 @@
                 if (alarmRef.current) {
                     alarmRef.current.pause();
                     alarmRef.current.currentTime = 0;
-                }
-                
-                // Play identify sound
-                if (identifyRef.current) {
-                    identifyRef.current.play().catch(e => console.log("Audio play prevented"));
                 }
                 
                 onEndGame();
@@ -1002,6 +999,26 @@
 
         // 4. Results Screen
         const ResultScreen = ({ imposterName, word, onRestart }) => {
+            const resultSoundRef = useRef(null);
+            
+            useEffect(() => {
+                // Initialize and play the result sound when the component mounts
+                if (!resultSoundRef.current) {
+                    resultSoundRef.current = new Audio("https://www.dropbox.com/scl/fi/l9k4wr93e20eb9v1c86c2/01JB990HCJZNAKJDSE9R0ZF2CQ.mp3?rlkey=mti7p26vh1j0hvvyapr0aly89&raw=1");
+                }
+                
+                resultSoundRef.current.play().catch(e => console.error("Result sound autoplay was prevented.", e));
+                
+                // This is the cleanup function that runs when the component unmounts
+                return () => {
+                    if (resultSoundRef.current) {
+                        resultSoundRef.current.pause();
+                        resultSoundRef.current.currentTime = 0;
+                    }
+                };
+            }, []); // The empty array [] means this effect runs only once on mount and cleanup on unmount
+
+
             return (
                 <div className="h-[100dvh] flex flex-col items-center justify-center p-6 text-center overflow-hidden relative">
                     <div className="absolute inset-0 pointer-events-none">
@@ -1013,7 +1030,7 @@
                         <div className="relative glass-panel p-10 rounded-[2.5rem] border border-red-500/30">
                             <div className="text-[10px] font-bold text-red-400 uppercase tracking-[0.4em] mb-10">Identity Confirmed</div>
                             <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
-                                <img src="https://em-content.zobj.net/source/microsoft-teams/400/beaming-face-with-smiling-eyes_1f601.png" alt="Beaming Face" className="w-24 h-24 drop-shadow-lg" />
+                                <img src="https://em-content.zobj.net/source/microsoft-teams/400/beaming-face-with-smiling-eyes_1f601.png" alt="Beaming Face" draggable="false" className="w-24 h-24 drop-shadow-lg" />
                             </div>
                             <span className="text-4xl font-display font-bold text-white block break-words leading-tight">
                                 {imposterName}
