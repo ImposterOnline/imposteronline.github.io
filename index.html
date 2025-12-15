@@ -284,8 +284,57 @@
         };
         
         const DISPLAY_CATEGORIES = ['Supercell', ...Object.keys(WORD_BANK).filter(c => c !== 'Supercell')];
-
+        
         // --- COMPONENTS ---
+
+        // 0. Loading Screen
+        const TIPS = [
+            "The Imposter doesn't know the secret word. Ask questions that might expose them!",
+            "Pay attention to hesitation. The Imposter might need extra time to think of a lie.",
+            "Try to ask a question only a true agent would know the answer to.",
+            "Long-press on a category card during setup to see example words.",
+            "The first player to ask a question is chosen randomly and is never the Imposter.",
+            "Innocent agents should try to prove they know the word without giving it away.",
+            "Random Mode chooses a category from the entire word bank for an extra challenge."
+        ];
+
+        const LoadingScreen = () => {
+            const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+            useEffect(() => {
+                const tipInterval = setInterval(() => {
+                    setCurrentTipIndex(prev => (prev + 1) % TIPS.length);
+                }, 5000); // Change tip every 5 seconds
+
+                return () => clearInterval(tipInterval);
+            }, []);
+
+            return (
+                <div className="h-[100dvh] flex flex-col items-center justify-center p-8 bg-slate-950 text-center relative overflow-hidden animate-fadeIn">
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="blob bg-brand-600/50 top-[-20%] left-[-20%] w-[60%] h-[60%]"></div>
+                        <div className="blob bg-cyan-600/50 bottom-[-20%] right-[-20%] w-[60%] h-[60%] animation-delay-2000"></div>
+                    </div>
+                    
+                    <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-28 h-28 mb-8 relative flex items-center justify-center">
+                            <div className="absolute inset-0 bg-brand-500/20 rounded-full animate-pulse-slow blur-xl"></div>
+                            <img src="https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png" alt="Loading Icon" draggable="false" className="w-24 h-24 animate-float" />
+                        </div>
+                        
+                        <h1 className="text-2xl font-display font-bold text-white/80 tracking-widest uppercase mb-12">Preparing Mission</h1>
+
+                        <div className="h-16 flex items-center justify-center">
+                            <p key={currentTipIndex} className="text-white/60 font-medium animate-fadeIn">
+                                <i className="fa-solid fa-lightbulb text-brand-400 mr-2"></i>
+                                {TIPS[currentTipIndex]}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
 
         const FaIcon = ({ name, sizeClass = "text-xl", className = "" }) => {
             const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -1058,6 +1107,7 @@
 
         // --- MAIN APP ---
         const App = () => {
+            const [isLoading, setIsLoading] = useState(true);
             const [gameState, setGameState] = useState('setup'); 
             const [gameData, setGameData] = useState({
                 players: [],
@@ -1070,10 +1120,58 @@
             });
             const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
-            const startGame = (players, selectedCategories, duration, isRandomMode, speakCategory) => {
-                // If random mode or user picked 'Random' explicitly (backwards compat), select one randomly
-                const useRandom = isRandomMode || (selectedCategories && selectedCategories.length === 0);
+            // Preloading logic
+            useEffect(() => {
+                const preloadAssets = (urls) => {
+                    const promises = urls.map(url => {
+                        return new Promise((resolve) => {
+                            if (url.match(/\.(png|jpg|jpeg|gif|webp)$/)) {
+                                const img = new Image();
+                                img.src = url;
+                                img.onload = resolve;
+                                img.onerror = resolve; // Resolve even on error
+                            } else if (url.match(/\.mp3$/)) {
+                                const audio = new Audio();
+                                audio.src = url;
+                                audio.addEventListener('canplaythrough', resolve, { once: true });
+                                audio.addEventListener('error', resolve, { once: true });
+                            } else {
+                                resolve();
+                            }
+                        });
+                    });
+                    return Promise.all(promises);
+                };
 
+                // Gather all asset URLs
+                const imageIcons = Object.values(CATEGORY_ICONS).flat();
+                const otherImages = [
+                    "https://www.clashchamps.com/wp-content/uploads/2024/06/czJOx2-Q.png",
+                    "https://static0.srcdn.com/wordpress/wp-content/uploads/2021/04/Three-new-Clash-of-Clans-games-announced.jpg",
+                    "https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png",
+                    "https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png",
+                    "https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png",
+                    "https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png",
+                    "https://em-content.zobj.net/source/microsoft-teams/400/beaming-face-with-smiling-eyes_1f601.png"
+                ];
+                const sounds = [
+                    "https://www.dropbox.com/scl/fi/tdwfnelbxoo06kn1za6on/01HSGT2Z9YWSYE1X5KRHAEH9G3.mp3?rlkey=btqqywkoto0v6xbrc3w758qde&raw=1",
+                    "https://www.dropbox.com/scl/fi/l9k4wr93e20eb9v1c86c2/01JB990HCJZNAKJDSE9R0ZF2CQ.mp3?rlkey=mti7p26vh1j0hvvyapr0aly89&raw=1"
+                ];
+
+                const allAssets = [...imageIcons, ...otherImages, ...sounds];
+
+                const assetPromise = preloadAssets(allAssets);
+                const minTimePromise = new Promise(resolve => setTimeout(resolve, 3000)); // 3-second minimum
+
+                Promise.all([assetPromise, minTimePromise]).then(() => {
+                    setIsLoading(false);
+                });
+
+            }, []);
+
+            const startGame = (players, selectedCategories, duration, isRandomMode, speakCategory) => {
+                const useRandom = isRandomMode || (selectedCategories && selectedCategories.length === 0);
                 let finalCategory;
                 if (useRandom) {
                     const allActualCategories = Object.keys(WORD_BANK);
@@ -1092,13 +1190,9 @@
                 }
 
                 setGameData({
-                    players,
-                    imposterIndex,
-                    secretWord,
-                    duration,
+                    players, imposterIndex, secretWord, duration,
                     firstPlayer: players[potentialFirst],
-                    category: finalCategory,
-                    speakCategory
+                    category: finalCategory, speakCategory
                 });
                 
                 setCurrentPlayerIndex(0);
@@ -1120,31 +1214,35 @@
                 <div className="w-full h-full text-slate-200 font-sans selection:bg-brand-500/30">
                     <div className="fixed inset-0 bg-[#020617] -z-10"></div>
                     
-                    {gameState === 'setup' && <SetupScreen onStartGame={startGame} />}
-                    {gameState === 'pass' && (
-                        <CardRevealScreen 
-                            key={currentPlayerIndex}
-                            player={gameData.players[currentPlayerIndex]}
-                            word={currentPlayerIndex === gameData.imposterIndex ? "IMPOSTER" : gameData.secretWord}
-                            onNext={handleNextPlayer}
-                            isLastPlayer={currentPlayerIndex === gameData.players.length - 1}
-                        />
-                    )}
-                    {gameState === 'active' && (
-                        <GameTimerScreen 
-                            duration={gameData.duration}
-                            onEndGame={handleEndGame}
-                            firstPlayer={gameData.firstPlayer}
-                            category={gameData.category}
-                            speakCategory={gameData.speakCategory}
-                        />
-                    )}
-                    {gameState === 'result' && (
-                        <ResultScreen 
-                            imposterName={gameData.players[gameData.imposterIndex]}
-                            word={gameData.secretWord}
-                            onRestart={handleRestart}
-                        />
+                    {isLoading ? <LoadingScreen /> : (
+                        <>
+                            {gameState === 'setup' && <SetupScreen onStartGame={startGame} />}
+                            {gameState === 'pass' && (
+                                <CardRevealScreen 
+                                    key={currentPlayerIndex}
+                                    player={gameData.players[currentPlayerIndex]}
+                                    word={currentPlayerIndex === gameData.imposterIndex ? "IMPOSTER" : gameData.secretWord}
+                                    onNext={handleNextPlayer}
+                                    isLastPlayer={currentPlayerIndex === gameData.players.length - 1}
+                                />
+                            )}
+                            {gameState === 'active' && (
+                                <GameTimerScreen 
+                                    duration={gameData.duration}
+                                    onEndGame={handleEndGame}
+                                    firstPlayer={gameData.firstPlayer}
+                                    category={gameData.category}
+                                    speakCategory={gameData.speakCategory}
+                                />
+                            )}
+                            {gameState === 'result' && (
+                                <ResultScreen 
+                                    imposterName={gameData.players[gameData.imposterIndex]}
+                                    word={gameData.secretWord}
+                                    onRestart={handleRestart}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
             );
