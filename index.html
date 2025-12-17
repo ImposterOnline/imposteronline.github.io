@@ -194,38 +194,56 @@
             66% { transform: translate(-20px, 20px) scale(0.9); }
         }
         
-		.timer-slider::-webkit-slider-thumb {
-		  -webkit-appearance: none; /* Override default look */
-		  appearance: none;
-		  width: 28px; /* Set width */
-		  height: 28px; /* Set height */
-		  background-image: url('https://em-content.zobj.net/source/microsoft-teams/337/stopwatch_23f1-fe0f.png');
-		  background-size: contain;
-		  background-repeat: no-repeat;
-		  background-position: center;
-		  background-color: transparent; /* Remove default color */
+		/* --- Corrected Timer Slider Styles --- */
+
+		/* Style the track for Webkit (Chrome, Safari) */
+		.timer-slider::-webkit-slider-runnable-track {
+		  width: 100%;
+		  height: 8px; /* This creates the thin line */
 		  cursor: pointer;
-		  /* Key change: A less negative margin-top pushes the thumb down */
-		  /* Try values from -4px to 0px or even positive values for a lower effect */
-		  margin-top: -4px;
-		  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Optional: a subtle shadow for depth */
-		  border-radius: 50%; /* Optional: ensures shadow is circular */
+		  background: #0f172a; /* This was the old bg-slate-950 */
+		  border-radius: 9999px; /* This was the old rounded-full */
 		}
 
-		.timer-slider::-moz-range-thumb {
-		  width: 28px; /* Set width */
-		  height: 28px; /* Set height */
-		  background-image: url('https://em-content.zobj.net/source/microsoft-teams/337/stopwatch_23f1-fe0f.png');
+		/* Style the thumb for Webkit (Chrome, Safari) */
+		.timer-slider::-webkit-slider-thumb {
+		  -webkit-appearance: none;
+		  /* This margin calculation perfectly centers the 28px thumb on the 8px track */
+		  margin-top: -10px; 
+		  height: 28px;
+		  width: 28px;
+		  background-image: url('https://em-content.zobj.net/source/microsoft-teams/337/three-oclock_1f552.png');
 		  background-size: contain;
 		  background-repeat: no-repeat;
 		  background-position: center;
-		  background-color: transparent; /* Remove default color */
-		  border: none; /* Remove default border */
+		  background-color: transparent;
 		  cursor: pointer;
-		  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Optional: a subtle shadow for depth */
-		  border-radius: 50%; /* Optional: ensures shadow is circular */
-		  /* Note: Firefox centers the thumb differently. The visual effect of being */
-		  /* "down" is primarily achieved through the image design itself. */
+		  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+		  border-radius: 50%;
+		}
+
+		/* Style the track for Firefox */
+		.timer-slider::-moz-range-track {
+		  width: 100%;
+		  height: 8px;
+		  cursor: pointer;
+		  background: #0f172a;
+		  border-radius: 9999px;
+		}
+
+		/* Style the thumb for Firefox */
+		.timer-slider::-moz-range-thumb {
+		  width: 28px;
+		  height: 28px;
+		  background-image: url('https://em-content.zobj.net/source/microsoft-teams/337/three-oclock_1f552.png');
+		  background-size: contain;
+		  background-repeat: no-repeat;
+		  background-position: center;
+		  background-color: transparent;
+		  border: none;
+		  cursor: pointer;
+		  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+		  border-radius: 50%;
 		}
 
         /* Subtle Shine Effect */
@@ -462,66 +480,112 @@
         // --- COMPONENTS ---
 
         // NEW: How to Play Modal
-        const HowToPlayModal = ({ onClose }) => {
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose}></div>
-                    <div className="relative w-full max-w-lg h-[90vh] glass-panel rounded-3xl border border-white/10 shadow-2xl animate-slide-up flex flex-col">
-                        <div className="flex-shrink-0 p-6 flex items-center justify-between border-b border-white/10">
-                            <h2 className="text-2xl font-display font-bold text-white flex items-center gap-3">
-                                <i className="fa-solid fa-book-open text-brand-400"></i>
-                                How to Play
-                            </h2>
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full text-white/50 hover:bg-white/10 active:scale-90 transition">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        
-                        <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6 text-white/80 leading-relaxed">
-                            <section>
-                                <h3 className="font-bold text-lg text-brand-400 mb-2">Objective</h3>
-                                <p>The goal is simple: The <span className="text-teal-400 font-semibold">Agents</span> must work together to identify the <span className="text-red-400 font-semibold">Imposter</span>. The Imposter wins if they remain hidden until the end or if the Agents accuse an innocent player.</p>
-                            </section>
+		const HowToPlayModal = ({ onClose }) => {
+			return (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+					<div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose}></div>
+					<div className="relative w-full max-w-lg h-[90vh] glass-panel rounded-3xl border border-white/10 shadow-2xl animate-slide-up flex flex-col">
+						<div className="flex-shrink-0 p-6 flex items-center justify-between border-b border-white/10">
+							<h2 className="text-2xl font-display font-bold text-white flex items-center gap-3">
+								<i className="fa-solid fa-book-open text-brand-400"></i>
+								How to Play: The Guide
+							</h2>
+							<button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full text-white/50 hover:bg-white/10 active:scale-90 transition">
+								<i className="fa-solid fa-xmark"></i>
+							</button>
+						</div>
+						
+						<div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8 text-white/80 leading-relaxed">
+							{/* Section 1: Objective */}
+							<section>
+								<h3 className="font-bold text-lg text-brand-400 mb-2 flex items-center gap-2">
+									<img src="https://em-content.zobj.net/source/microsoft-teams/337/direct-hit_1f3af.png" alt="Objective Icon" className="w-8 h-8" />
+									Primary Objective
+								</h3>
+								<p>A battle of wits and deception. The <span className="text-teal-400 font-semibold">Agents</span> must work together to identify the single <span className="text-red-400 font-semibold">Imposter</span>. The Imposter wins if they remain hidden until the end or if the Agents mistakenly vote out one of their own.</p>
+							</section>
 
-                            <section>
-                                <h3 className="font-bold text-lg text-brand-400 mb-2">The Setup</h3>
-                                <p>At the start of each round, every player is shown a secret card. All Agents receive the same secret word from a chosen category, while the Imposter's card simply says "IMPOSTER". The Imposter does not know the secret word.</p>
-                                <div className="mt-3 bg-white/5 p-3 rounded-lg border border-white/10 text-sm">
-                                    <p><i className="fa-solid fa-lightbulb text-yellow-400 mr-2"></i><strong>Tip:</strong> Any player can tap and hold on a category during setup to see example words from that list. This helps everyone get familiar with the possibilities!</p>
-                                </div>
-                            </section>
-                            
-                            <section>
-                                <h3 className="font-bold text-lg text-brand-400 mb-2">Gameplay</h3>
-                                <p>Players take turns talking about the secret word without actually saying it. The goal is to prove to others that you know the word, while trying to spot who doesn't. There are two common ways to play:</p>
-                                <ul className="list-decimal list-inside mt-3 space-y-2 pl-2">
-                                    <li><strong>State a Fact:</strong> Each player, in turn, says one known fact or description about the word.</li>
-                                    <li><strong>Ask a Question:</strong> Players take turns asking the *next* player in the turn order a question related to the word.</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-lg text-brand-400 mb-2">Scenario: The Word is "Pizza"</h3>
-                                <div className="mt-2 space-y-2 pl-2 text-sm">
-								  <p>• <strong>Cloe (Agent):</strong> "People argue a lot about what the ‘right’ version is." <em>(Good clue!)</em></p>
-								  <p>• <strong>Dan (Imposter):</strong> "It’s better when it’s fresh." <em>(Very generic – suspicious!)</em></p>
-								  <p>• <strong>Micheal (Agent):</strong> "Some places are famous specifically for this." <em>(Convincing!)</em></p>
-
-								  <p className="mt-3">
-									The Imposter must listen to the Agents' clues to guess what the word might be and try to blend in with vague or clever statements.
-								  </p>
+							{/* Section 2: Setup */}
+							<section>
+								<h3 className="font-bold text-lg text-brand-400 mb-2 flex items-center gap-2">
+									<img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Setup Icon" className="w-8 h-8" style={{ position: 'relative', top: '-2px' }} />
+									The Setup: Mission Secrecy
+								</h3>
+								<p>At the start of each round, every player receives a secret role. <span className="text-teal-400 font-semibold">Agents</span> get the same secret word, while the <span className="text-red-400 font-semibold">Imposter</span> is only told they are the spy and must deduce the word from clues.</p>
+								<div className="mt-3 bg-white/5 p-3 rounded-lg border border-white/10 text-sm">
+									<p><i className="fa-solid fa-lightbulb text-yellow-400 mr-2"></i><strong>Pro-Tip:</strong> Press and hold a category during setup to see example words. This is crucial for getting a feel for the possibilities before the round begins!</p>
 								</div>
-                            </section>
+							</section>
+							
+							{/* Section 3: Gameplay */}
+							<section>
+								<h3 className="font-bold text-lg text-brand-400 mb-2 flex items-center gap-2">
+									<img src="https://em-content.zobj.net/source/microsoft-teams/364/speaking-head_1f5e3-fe0f.png" alt="Gameplay Icon" className="w-8 h-8" />
+									Gameplay: The Art of Deception
+								</h3>
+								<p>Players take turns talking about the secret word without actually saying it. The goal is to prove you know the word while trying to spot who doesn't. Common ways to play include:</p>
+								<div className="mt-3 space-y-2">
+									<p>• <strong>State a Fact:</strong> Each player, in turn, says one known fact or description about the word.</p>
+									<p>• <strong>Ask a Question:</strong> Players take turns asking the *next* player in the turn order a question related to the word.</p>
+								</div>
+							</section>
+							
+							{/* Section 4: Scenario */}
+							<section>
+								<h3 className="font-bold text-lg text-brand-400 mb-2">Scenario: The Word is "Pizza"</h3>
+								<div className="mt-2 space-y-2 pl-2 text-sm">
+									<p>• <strong>Cloe (Agent):</strong> "People argue a lot about what the ‘right’ version is." <em>(Good clue!)</em></p>
+									<p>• <strong>Dan (Imposter):</strong> "It’s better when it’s fresh." <em>(Very generic – suspicious!)</em></p>
+									<p>• <strong>Michael (Agent):</strong> "Some places are famous specifically for this." <em>(Convincing!)</em></p>
+									<p className="mt-3">
+									The Imposter must listen to the Agents' clues to guess what the word might be and try to blend in with vague or clever statements.
+									</p>
+								</div>
+							</section>
 
-                            <section>
-                                <h3 className="font-bold text-lg text-brand-400 mb-2">Finding the Imposter</h3>
-                                <p>After the discussion (or when the timer runs out), everyone votes for who they think the Imposter is. If the majority correctly identifies the Imposter, the Agents win. Otherwise, the Imposter wins!</p>
-                            </section>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+							{/* Section 5: Agent Strategy */}
+							<section>
+								<h3 className="font-bold text-lg text-teal-400 mb-2 flex items-center gap-2">
+									 <img src="https://em-content.zobj.net/source/microsoft-teams/337/busts-in-silhouette_1f465.png" alt="Agent Strategy Icon" className="w-8 h-8" style={{ position: 'relative', top: '-2px' }} />
+									Strategies for Agents
+								</h3>
+								<div className="space-y-3">
+									<p>• <strong className="text-white/90">Be Specific, Not Obvious:</strong> A clue like "Jaws" for "Shark" might be too revealing. A better clue is "fin" or "predator".</p>
+									<p>• <strong className="text-white/90">Watch for Hesitation:</strong> The Imposter might need extra time to process clues and invent a plausible answer.</p>
+									<p>• <strong className="text-white/90">Analyze Vague Clues:</strong> Generic descriptions like "it's good" or "it's big" are classic Imposter tells. Challenge them!</p>
+									<p>• <strong className="text-white/90">Cross-Reference:</strong> Do all the clues fit together? If one feels out of place, you might have found your target.</p>
+								</div>
+							</section>
+
+							{/* Section 6: Imposter Strategy */}
+							 <section>
+								<h3 className="font-bold text-lg text-red-400 mb-2 flex items-center gap-2">
+									<img src="https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png" alt="Imposter Strategy Icon" className="w-8 h-8" style={{ position: 'relative', top: '-2px' }} />
+									Strategies for the Imposter
+								</h3>
+								<div className="space-y-3">
+									<p>• <strong className="text-white/90">Listen and Adapt:</strong> Your greatest weapon is the information from the Agents. Use the first few clues to build a theory.</p>
+									<p>• <strong className="text-white/90">Stay Vague Early:</strong> Start with general clues. As you get more confident about the word, you can become slightly more specific to build trust.</p>
+									<p>• <strong className="text-white/90">Confidence is Key:</strong> Act like you know the word, even when you're lost. Avoid nervous tells. Project certainty.</p>
+									<p>• <strong className="text-white/90">Sow Chaos:</strong> If you think you've figured out the word, you can give a subtly misleading clue to try and frame an innocent Agent.</p>
+								</div>
+							</section>
+
+							{/* Section 7: Voting */}
+							<section>
+								<h3 className="font-bold text-lg text-brand-400 mb-2 flex items-center gap-2">
+									<img src="https://em-content.zobj.net/source/microsoft-teams/337/hammer-and-pick_2692-fe0f.png" alt="Voting Icon" className="w-7 h-7" />
+									The Final Showdown
+								</h3>
+								<p>After discussion (or when the timer runs out), everyone votes.
+								<br/> • If the Imposter is correctly identified, the <span className="text-teal-400 font-semibold">Agents win</span>.
+								<br/> • If an innocent Agent is voted out, or if there's a tie, the <span className="text-red-400 font-semibold">Imposter wins!</span></p>
+							</section>
+						</div>
+					</div>
+				</div>
+			);
+		};
 
         // NEW: Game Mode Selection Screen (Restyled)
         const GameModeSelectionScreen = ({ onSelectMode, onShowHowToPlay, audioManager }) => {
@@ -1517,13 +1581,13 @@
                                         <span className="font-mono text-xl font-bold text-white">{timerMinutes} <span className="text-sm text-white/50">min</span></span>
                                     </div>
                                     <input
-                                        type="range"
-                                        min="1"
-                                        max="15"
-                                        value={timerMinutes}
-                                        onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
-                                        className="w-full h-2 bg-slate-950 rounded-full appearance-none cursor-pointer timer-slider"
-                                    />
+										type="range"
+										min="1"
+										max="15"
+										value={timerMinutes}
+										onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
+										className="w-full h-7 appearance-none cursor-pointer timer-slider bg-transparent"
+									/>
                                 </div>
 
                                 {/* Divider */}
@@ -2132,7 +2196,7 @@
         };
 
 
-// 6. Results Screen
+		// 6. Results Screen
         const ResultScreen = ({ lobbyData, lobbyPlayers, onRestart, onBackToHome, audioManager, isHost, isLocal }) => {
             const { gameResult, imposterId, secretWord, turnOrder } = lobbyData;
             const imposter = lobbyPlayers.find(p => p.id === imposterId);
