@@ -159,23 +159,25 @@
             background-size: cover;
             background-position: center;
             mix-blend-mode: overlay;
-            transition: opacity 1s ease;
+            opacity: 0; /* Both start invisible */
+            animation: alternateFade 16s infinite; /* A bit faster looks better */
         }
 
         .supercell-bg-1 {
             background-image: url('https://www.clashchamps.com/wp-content/uploads/2024/06/czJOx2-Q.png');
-            opacity: 0.6;
+            /* No delay */
         }
 
         .supercell-bg-2 {
             background-image: url('https://static0.srcdn.com/wordpress/wp-content/uploads/2021/04/Three-new-Clash-of-Clans-games-announced.jpg');
-            opacity: 0;
-            animation: supercellFade 10s infinite;
+            animation-delay: 8s; /* Half the duration delay */
         }
 
-        @keyframes supercellFade {
-            0%, 45% { opacity: 0; }
-            50%, 95% { opacity: 0.6; }
+        @keyframes alternateFade {
+            0%   { opacity: 0; animation-timing-function: ease-in; }
+            25%  { opacity: 0.6; }
+            50%  { opacity: 0.6; animation-timing-function: ease-out; }
+            75%  { opacity: 0; }
             100% { opacity: 0; }
         }
 
@@ -488,7 +490,7 @@
 						<div className="flex-shrink-0 p-6 flex items-center justify-between border-b border-white/10">
 							<h2 className="text-2xl font-display font-bold text-white flex items-center gap-3">
 								<i className="fa-solid fa-book-open text-brand-400"></i>
-								How to Play: The Guide
+								How to Play
 							</h2>
 							<button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full text-white/50 hover:bg-white/10 active:scale-90 transition">
 								<i className="fa-solid fa-xmark"></i>
