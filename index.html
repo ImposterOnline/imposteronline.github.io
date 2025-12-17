@@ -227,6 +227,39 @@
 		  /* Note: Firefox centers the thumb differently. The visual effect of being */
 		  /* "down" is primarily achieved through the image design itself. */
 		}
+
+        /* Subtle Shine Effect */
+        .subtle-shine-container {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate; /* Creates a new stacking context */
+        }
+
+        .subtle-shine-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            /* A very subtle, faded gradient */
+            background: linear-gradient(
+                110deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.06) 48%,
+                rgba(255, 255, 255, 0.06) 52%,
+                transparent 70%
+            );
+            transform: translateX(-100%);
+            /* Slower, smoother, faded animation loop */
+            animation: subtleShine 7s ease-in-out infinite;
+        }
+
+        @keyframes subtleShine {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body class="select-none">
@@ -440,8 +473,7 @@
                     <div className="relative z-10 flex flex-col items-center w-full max-w-lg mx-auto">
                          <div class="mb-10 text-center">
                             <h1 class="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight">IMPOSTER</h1>
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                                <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                            <div class="subtle-shine-container inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
                                 <span class="text-white/60 text-[10px] font-bold tracking-[0.3em] uppercase">Trust No One • 4500+ Words</span>
                             </div>
                         </div>
@@ -460,6 +492,9 @@
                                 <i className="fa-solid fa-mobile-screen-button"></i> PLAY ON THIS DEVICE
                             </button>
                         </div>
+                    </div>
+                    <div className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/30 z-20">
+                        Platform made by <a href="https://fillabrona.github.io" target="_blank" rel="noopener noreferrer" className="font-bold text-white/50 hover:text-white/80 transition">Jandré du Preez</a>
                     </div>
                 </div>
             );
@@ -1244,8 +1279,7 @@
                             {/* Header */}
                             <div class="mb-10 text-center">
 								<h1 class="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight">IMPOSTER</h1>
-								<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-									<div class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+								<div class="subtle-shine-container inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
 									<span class="text-white/60 text-[10px] font-bold tracking-[0.3em] uppercase">Local Game</span>
 								</div>
 							</div>
