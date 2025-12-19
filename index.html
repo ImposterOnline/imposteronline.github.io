@@ -675,7 +675,7 @@
         };
         
         // NEW: Online Lobby Screen (Restyled)
-        const OnlineLobbyScreen = ({ user, onJoin, onCreate, audioManager, onBack }) => {
+        const OnlineLobbyScreen = ({ user, onJoin, onCreate, audioManager, onBack, initialParams }) => {
             const [isJoining, setIsJoining] = useState(true);
             const [lobbyId, setLobbyId] = useState('');
             const [password, setPassword] = useState('');
@@ -688,24 +688,16 @@
                     const saved = localStorage.getItem('imposter_username');
                     if (saved) setUsername(JSON.parse(saved));
 
-                    const params = new URLSearchParams(window.location.search);
-                    const urlLobbyId = params.get('lobbyId');
-                    const urlPassword = params.get('password');
-                    if (urlLobbyId) {
-                        setLobbyId(urlLobbyId.toUpperCase());
-                        setIsJoining(true);
-                        // If there is a lobby ID in the URL, we are definitely joining.
-                        // No need to show the "create" screen first.
-                    }
-                    if (urlPassword) {
-                        setPassword(urlPassword.toUpperCase());
-                    }
-                     // Clear URL params after reading them
-                    if (urlLobbyId || urlPassword) {
-                        window.history.replaceState({}, document.title, window.location.pathname);
+                    // Prioritize initialParams from props (passed from App component)
+                    if (initialParams && initialParams.lobbyId) {
+                        setLobbyId(initialParams.lobbyId.toUpperCase());
+                        if (initialParams.password) {
+                            setPassword(initialParams.password.toUpperCase());
+                        }
+                        setIsJoining(true); // Force joining mode if params are passed
                     }
                 } catch {}
-            }, []);
+            }, [initialParams]);
 
             useEffect(() => { localStorage.setItem('imposter_username', JSON.stringify(username)); }, [username]);
 
@@ -1299,9 +1291,8 @@ const TIPS = [
 
         const LoadingScreen = ({ onStart, isFullyLoaded }) => {
             const [currentTipIndex, setCurrentTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length));
-            const [progress, setProgress] = useState(0);
+            const [visualProgress, setVisualProgress] = useState(0);
             const [isReady, setIsReady] = useState(false);
-            const LOADING_DURATION = 3500; // ms
 
             useEffect(() => {
                 const tipInterval = setInterval(() => {
@@ -1311,22 +1302,57 @@ const TIPS = [
                         return newIndex;
                     });
                 }, 5000);
-
-                const progressInterval = setInterval(() => {
-                    setProgress(prev => Math.min(prev + 100 / (LOADING_DURATION / 100), 100));
-                }, 100);
-
-                return () => {
-                    clearInterval(tipInterval);
-                    clearInterval(progressInterval);
-                };
+                return () => clearInterval(tipInterval);
             }, []);
 
+            // New animation logic for a smooth, realistic progress bar
             useEffect(() => {
-                if (progress >= 100 && isFullyLoaded) {
-                    setTimeout(() => setIsReady(true), 500); // Small delay for the bar to finish animating
+                let animationFrameId;
+                const startTime = Date.now();
+                const SIMULATED_DURATION = 2800; // ms to reach the "almost complete" state
+
+                const animate = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progressFraction = Math.min(elapsed / SIMULATED_DURATION, 1);
+                    
+                    // An ease-out function (cubic) makes it start fast and slow down
+                    const easedProgress = 1 - Math.pow(1 - progressFraction, 3);
+                    
+                    // We simulate loading up to 95%, then wait for the real assets
+                    const currentVisualProgress = easedProgress * 95;
+                    
+                    setVisualProgress(currentVisualProgress);
+
+                    if (progressFraction < 1) {
+                        animationFrameId = requestAnimationFrame(animate);
+                    }
+                };
+
+                if (!isFullyLoaded) {
+                    animationFrameId = requestAnimationFrame(animate);
+                } else {
+                    // If assets are already loaded when the component mounts, just finish
+                    setVisualProgress(100);
+                    setTimeout(() => setIsReady(true), 500);
                 }
-            }, [progress, isFullyLoaded]);
+
+                return () => {
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                };
+            }, []); // Run this simulation once on mount
+
+            // This effect triggers only when the actual loading finishes
+            useEffect(() => {
+                if (isFullyLoaded) {
+                    // Animate the final 5% and show the button
+                    setVisualProgress(100);
+                    setTimeout(() => {
+                        setIsReady(true);
+                    }, 600); // A little delay for the bar to finish its animation
+                }
+            }, [isFullyLoaded]);
 
             return (
                 <div className="h-[100dvh] flex flex-col items-center justify-center p-8 bg-slate-950 text-center relative overflow-hidden animate-fadeIn">
@@ -1354,8 +1380,8 @@ const TIPS = [
                                 </button>
                             ) : (
                                 <div className="w-full max-w-xs animate-fadeIn">
-                                    <div className="w-full bg-slate-800/50 rounded-full h-2.5 mb-4 border border-white/5">
-                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-300 ease-linear" style={{ width: `${progress}%` }}></div>
+                                    <div className="w-full bg-slate-800/50 rounded-full h-2.5 mb-4 border border-white/5 overflow-hidden">
+                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${visualProgress}%` }}></div>
                                     </div>
                                     <p key={currentTipIndex} className="text-white/60 font-medium text-sm animate-fadeIn h-10">
                                         <i className="fa-solid fa-lightbulb text-brand-400 mr-2"></i>
@@ -2694,6 +2720,7 @@ const TIPS = [
             const [user, setUser] = useState(null);
             const [gameMode, setGameMode] = useState('select'); // 'select', 'local', 'online'
             const [showHowToPlay, setShowHowToPlay] = useState(false); // New state for "How to Play" modal
+            const [initialLobbyParams, setInitialLobbyParams] = useState(null);
 
             // Local Game State
             const [localGameState, setLocalGameState] = useState('setup'); 
@@ -2757,8 +2784,11 @@ const TIPS = [
                     sounds: {},
                     music: {},
                     isMuted: false,
+                    isUnlocked: false, // Audio permission flag
                     currentMusicTrack: null,
                     
+                    unlockAudio: function() { this.isUnlocked = true; },
+
                     initSound: function(name, url, options = {}) {
                         const audio = new Audio(url);
                         audio.loop = options.loop || false;
@@ -2772,6 +2802,7 @@ const TIPS = [
                         }
                     },
                     playSound: function(name, category = null) {
+                        if (!this.isUnlocked) return;
                         let sound = this.sounds[name];
                         if (name === 'category' && category && this.sounds.categories[category]) {
                             sound = this.sounds.categories[category];
@@ -2786,6 +2817,7 @@ const TIPS = [
                     },
                     getSound: function(name) { return this.sounds[name]; },
 					stopSound: function(name) {
+                        if (!this.isUnlocked) return;
 						const sound = this.sounds[name];
 						if (sound) {
 							sound.pause();
@@ -2794,6 +2826,7 @@ const TIPS = [
 					},
                     
                     playMusic: function(name) {
+                        if (!this.isUnlocked) return;
                         if (this.currentMusicTrack === name) return;
 
                         this.stopMusic();
@@ -2825,6 +2858,7 @@ const TIPS = [
                         }
                     },
                     resumeAllMusic: function() {
+                        if (!this.isUnlocked) return;
                         if (this.currentMusicTrack && this.music[this.currentMusicTrack]) {
                             this.music[this.currentMusicTrack].play().catch(()=>{});
                         }
@@ -2846,8 +2880,18 @@ const TIPS = [
                 audioManagerRef.current = manager;
             }, []);
 
-            // Preloading & Auth
+            // Preloading, Auth, and URL Param Handling
             useEffect(() => {
+                // Read URL params ONCE on initial load
+                const params = new URLSearchParams(window.location.search);
+                const lobbyId = params.get('lobbyId');
+                const password = params.get('password');
+                if (lobbyId) {
+                    setInitialLobbyParams({ lobbyId, password: password || '' });
+                    // Clean the URL to prevent issues on refresh
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
                 const assetsPromise = preloadAssets();
                 const authUnsubscribe = auth.onAuthStateChanged(firebaseUser => {
                     if (firebaseUser) {
@@ -3342,9 +3386,16 @@ const TIPS = [
             };
 
             const handleStart = () => {
-                audioManagerRef.current.playSound('uiClick');
-                audioManagerRef.current.playMusic('mainMenuMusic');
+                // This is the crucial user interaction step to enable audio
+                if (audioManagerRef.current) {
+                    audioManagerRef.current.unlockAudio();
+                    audioManagerRef.current.playSound('uiClick'); // Play sound on click
+                }
                 setIsLoading(false);
+                // After loading, if we have lobby params, go straight to online mode
+                if (initialLobbyParams) {
+                    setGameMode('online');
+                }
             };
 
             // --- RENDER LOGIC ---
@@ -3374,7 +3425,7 @@ const TIPS = [
                 
                 if (gameMode === 'online') {
                     if (!lobbyId || !lobbyData) {
-                        return <OnlineLobbyScreen user={user} onCreate={handleCreateLobby} onJoin={handleJoinLobby} audioManager={audioManagerRef.current} onBack={handleBackToHome} />;
+                        return <OnlineLobbyScreen user={user} onCreate={handleCreateLobby} onJoin={handleJoinLobby} audioManager={audioManagerRef.current} onBack={handleBackToHome} initialParams={initialLobbyParams} />;
                     }
                     
                     const meAsPlayer = lobbyPlayers.find(p => p.id === user.uid);
