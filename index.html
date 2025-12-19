@@ -3403,18 +3403,30 @@ const TIPS = [
                 }, 2000);
             };
 
-            const handleStart = () => {
-                // This is the crucial user interaction step to enable audio
-                if (audioManagerRef.current) {
-                    audioManagerRef.current.unlockAudio();
-                    audioManagerRef.current.playSound('uiClick'); // Play sound on click
-                }
-                setIsLoading(false);
-                // After loading, if we have lobby params, go straight to online mode
-                if (initialLobbyParams) {
-                    setGameMode('online');
-                }
-            };
+				const handleStart = () => {
+				// This is the crucial user interaction step to enable audio
+				if (audioManagerRef.current) {
+					audioManagerRef.current.unlockAudio();
+					audioManagerRef.current.playSound('uiClick'); // Play sound on click
+                
+					// --- FIX START ---
+					// Directly start the correct music track within the user interaction event
+					// to comply with browser autoplay policies.
+					if (initialLobbyParams) {
+						// We are going to a lobby, play the category/lobby music
+						audioManagerRef.current.playMusic('categorySelectionMusic');
+					} else {
+						// We are going to the main menu
+						audioManagerRef.current.playMusic('mainMenuMusic');
+					}
+					// --- FIX END ---
+				}
+				setIsLoading(false);
+				// After loading, if we have lobby params, go straight to online mode
+				if (initialLobbyParams) {
+					setGameMode('online');
+				}
+			};
 
             // --- RENDER LOGIC ---
             const renderContent = () => {
