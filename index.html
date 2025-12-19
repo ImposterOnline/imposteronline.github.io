@@ -1293,6 +1293,7 @@ const TIPS = [
             const [currentTipIndex, setCurrentTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length));
             const [visualProgress, setVisualProgress] = useState(0);
             const [isReady, setIsReady] = useState(false);
+            const animationFrameIdRef = useRef(null);
 
             useEffect(() => {
                 const tipInterval = setInterval(() => {
@@ -1307,7 +1308,7 @@ const TIPS = [
 
             // New animation logic for a smooth, realistic progress bar
             useEffect(() => {
-                let animationFrameId;
+                // REMOVED: let animationFrameId;
                 const startTime = Date.now();
                 const SIMULATED_DURATION = 2800; // ms to reach the "almost complete" state
 
@@ -1324,12 +1325,12 @@ const TIPS = [
                     setVisualProgress(currentVisualProgress);
 
                     if (progressFraction < 1) {
-                        animationFrameId = requestAnimationFrame(animate);
+                        animationFrameIdRef.current = requestAnimationFrame(animate); // USE REF
                     }
                 };
 
                 if (!isFullyLoaded) {
-                    animationFrameId = requestAnimationFrame(animate);
+                    animationFrameIdRef.current = requestAnimationFrame(animate); // USE REF
                 } else {
                     // If assets are already loaded when the component mounts, just finish
                     setVisualProgress(100);
@@ -1337,8 +1338,8 @@ const TIPS = [
                 }
 
                 return () => {
-                    if (animationFrameId) {
-                        cancelAnimationFrame(animationFrameId);
+                    if (animationFrameIdRef.current) { // USE REF
+                        cancelAnimationFrame(animationFrameIdRef.current); // USE REF
                     }
                 };
             }, []); // Run this simulation once on mount
@@ -1347,6 +1348,7 @@ const TIPS = [
             useEffect(() => {
                 if (isFullyLoaded) {
                     // Animate the final 5% and show the button
+                    cancelAnimationFrame(animationFrameIdRef.current); // <-- ADD THIS LINE to stop the old animation
                     setVisualProgress(100);
                     setTimeout(() => {
                         setIsReady(true);
@@ -2671,45 +2673,61 @@ const TIPS = [
         const generateLobbyPassword = () => generateRandomString(4, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
 		
 		
-        // --- NEW: Asset Preloading ---
+// --- NEW: Asset Preloading ---
         const preloadAssets = () => {
+            // --- Image Preloading ---
             const imageUrls = [
                 // General UI & Components
-                'https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png', // Loading Icon
-                'https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png', // Handover & Agent Win Icon
-                'https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png', // Locked Card Icon
-                'https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png', // Imposter Card Icon
-                'https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png', // Innocent Card Icon
-                'https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png', // Imposter Win Icon
-                'https://em-content.zobj.net/source/microsoft-teams/337/stopwatch_23f1-fe0f.png', // Timer Slider thumb
-                
-                // Supercell category backgrounds
+                'https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png',
+                'https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/three-oclock_1f552.png',
                 'https://www.clashchamps.com/wp-content/uploads/2024/06/czJOx2-Q.png',
                 'https://static0.srcdn.com/wordpress/wp-content/uploads/2021/04/Three-new-Clash-of-Clans-games-announced.jpg',
             ];
 
-            // Add all category icons to the list
             Object.values(CATEGORY_ICONS).forEach(icon => {
-                if (Array.isArray(icon)) {
-                    imageUrls.push(...icon);
-                } else {
-                    imageUrls.push(icon);
-                }
+                if (Array.isArray(icon)) { imageUrls.push(...icon); } 
+                else { imageUrls.push(icon); }
             });
 
-            // Use a Set to ensure we only load unique URLs
             const uniqueImageUrls = [...new Set(imageUrls)];
-
-            const promises = uniqueImageUrls.map(src => {
-                return new Promise((resolve, reject) => {
+            const imagePromises = uniqueImageUrls.map(src => {
+                return new Promise((resolve) => {
                     const img = new Image();
                     img.src = src;
                     img.onload = resolve;
-                    img.onerror = resolve; // Resolve on error so one broken image doesn't stop the app
+                    img.onerror = resolve;
                 });
             });
 
-            return Promise.all(promises);
+            // --- Audio Preloading ---
+            const allAudioUrls = [];
+            Object.values(AUDIO_URLS).forEach(value => {
+                if (typeof value === 'string') {
+                    allAudioUrls.push(value);
+                } else if (typeof value === 'object') { // Handles nested objects like 'categories'
+                    Object.values(value).forEach(nestedUrl => allAudioUrls.push(nestedUrl));
+                }
+            });
+            
+            const uniqueAudioUrls = [...new Set(allAudioUrls)];
+            const audioPromises = uniqueAudioUrls.map(src => {
+                return new Promise((resolve) => {
+                    const audio = new Audio();
+                    // 'canplaythrough' event signifies enough data is loaded to play without interruption
+                    audio.addEventListener('canplaythrough', resolve, { once: true });
+                    audio.addEventListener('error', resolve, { once: true }); // Resolve on error to not block loading
+                    audio.src = src;
+                    audio.load(); // Some browsers need this to start loading
+                });
+            });
+            
+            // Combine all promises
+            return Promise.all([...imagePromises, ...audioPromises]);
         };
 
         // --- MAIN APP ---
