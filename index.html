@@ -453,6 +453,7 @@
             uiClick: "https://www.dropbox.com/scl/fi/ww27xdd3abq3ozc0heds8/01HWD5XBKANVPZVCCTP7THR7Q2.mp3?rlkey=6httxc42qx2h3e7cfj16jvpbr&raw=1",
             openInfo: "https://www.dropbox.com/scl/fi/z3o61q4zqex0d4081r6ej/01HWD5XB2JFXRPXHS6VSGTFTMG.mp3?rlkey=o4j1j0zroc5tpseqa0z9stbdz&raw=1",
             toggleMode: "https://www.dropbox.com/scl/fi/a0csiwttotrzam52xos84/01HWD5XBNZEHSRDXY96T1W5E18.mp3?rlkey=wgjt1yzesree78p5bzroum1cd&raw=1",
+            turnOrderReveal: "https://www.dropbox.com/scl/fi/wk1fguj7rf9u5t1hlaeq2/01HYDYM99NTN52107R03DRVHWV.mp3?rlkey=dy0a819d3z8l91uf08kdjpk6w&st=7tcwrkwi&raw=1",
             
             // Critical alerts & results (not affected by mute)
             alarm: "https://www.dropbox.com/scl/fi/33ljaplfdfse9h9xrqkia/01J9RASVSTKGV6WQ2GKBY86R84.mp3?rlkey=dhsr2ygnox9se0s88uklsfa5l&st=25yswvvu&raw=1",
@@ -2225,6 +2226,17 @@ const TIPS = [
             const [countdown, setCountdown] = useState(10);
 
             useEffect(() => {
+                if (audioManager) {
+                    audioManager.playSound('turnOrderReveal');
+                }
+                return () => {
+                    if (audioManager) {
+                        audioManager.stopSound('turnOrderReveal');
+                    }
+                };
+            }, [audioManager]);
+
+            useEffect(() => {
                 const timer = setInterval(() => {
                     setCountdown(prev => {
                         if (prev <= 1) {
@@ -2890,6 +2902,7 @@ const TIPS = [
                 manager.initSound('mainMenuMusic', AUDIO_URLS.mainMenuMusic, { loop: true, isMusic: true });
                 manager.initSound('categorySelectionMusic', AUDIO_URLS.categorySelectionMusic, { loop: true, isMusic: true, volume: 0.7 });
                 manager.initSound('timerMusic', AUDIO_URLS.timerMusic, { loop: true, isMusic: true, volume: 0.5 });
+                manager.initSound('turnOrderReveal', AUDIO_URLS.turnOrderReveal, { volume: 0.7 });
                 
                 // Initialize Voiceovers
                 manager.sounds.categories = {};
