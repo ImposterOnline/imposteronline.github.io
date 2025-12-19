@@ -305,7 +305,7 @@
         // --- END FIREBASE SETUP ---
 
         // --- DATA ---
-		const WORD_BANK = {
+				const WORD_BANK = {
 		  Supercell: [
 			"Barbarian", "Archer", "Giant", "Goblin", "Wall Breaker", "Balloon", "Wizard", "Healer", "Dragon", "P.E.K.K.A", "Minion", "Hog Rider", "Valkyrie", "Golem", "Witch", "Lava Hound", "Bowler", "Baby Dragon", "Miner", "Electro Dragon", "Yeti", "Ice Golem", "Headhunter", "Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Knight", "Musketeer", "Prince", "Skeleton Army", "Goblin Barrel", "Giant Skeleton", "Royal Giant", "Elite Barbarians", "Mega Minion", "Ice Wizard", "Electro Wizard", "Inferno Dragon", "Night Witch", "Bandit", "Royal Ghost", "Magic Archer", "Lumberjack", "Ram Rider", "Fisherman", "Mother Witch", "Electro Giant", "Phoenix", "Monk", "Little Prince", "Cannon", "Tesla", "Mortar", "X-Bow", "Inferno Tower", "Bomb Tower", "Elixir Collector", "Skeletons", "Bats", "Fire Spirit", "Ice Spirit", "Electro Spirit", "Heal Spirit", "Rage", "Freeze", "Poison", "Fireball", "Arrows", "Zap", "Lightning", "Earthquake", "Clone", "Mirror", "Tornado", "Rocket", "Super Barbarian", "Super Archer", "Super Giant", "Super Wall Breaker", "Super Wizard", "Super Dragon", "Super Valkyrie", "Super Witch", "Super Minion", "Super Bowler", "Ice Hound", "Flying Machine", "Battle Ram", "Sparky", "Mega Knight", "Hunter", "Executioner", "Dart Goblin", "Princess", "Log", "Graveyard", "Mirror", "Giant Snowball", "Royal Delivery", "Heal", "Tombstone", "Bomb", "Hidden Tesla", "Air Defense", "Bomb Tower", "Seeking Air Mine", "Spring Trap", "Giant Bomb", "Red Air Bomb", "Town Hall", "Clan Castle", "Gold Mine", "Elixir Pump", "Barracks", "Laboratory", "Spell Factory", "Workshop", "Seige Machine", "Battle Machine", "Electrofire Wizard"
 		  ],
@@ -1253,7 +1253,7 @@
         };
 
 
-const TIPS = [
+		const TIPS = [
             "The Imposter doesn't know the secret word. Ask questions that might expose them!",
             "Pay attention to hesitation. The Imposter might need extra time to think of a lie.",
             "Try to ask a question only a true agent would know the answer to.",
@@ -1290,12 +1290,19 @@ const TIPS = [
             "Pay attention to the voting record at the end of an online match. It can reveal alliances and voting patterns you missed during the discussion."
         ];
 
-        const LoadingScreen = ({ onStart, isFullyLoaded }) => {
+        // --- MODIFIED: LoadingScreen with real progress and stuttering effect ---
+        const LoadingScreen = ({ onStart, onFinishedLoading }) => {
             const [currentTipIndex, setCurrentTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length));
-            const [visualProgress, setVisualProgress] = useState(0);
             const [isReady, setIsReady] = useState(false);
-            const animationFrameIdRef = useRef(null);
 
+            // State for actual loading progress
+            const [targetProgress, setTargetProgress] = useState(0);
+            // State for what the user sees on the progress bar
+            const [visualProgress, setVisualProgress] = useState(0);
+            
+            const stutterTimeoutRef = useRef(null);
+
+            // Tip rotation effect
             useEffect(() => {
                 const tipInterval = setInterval(() => {
                     setCurrentTipIndex(prev => {
@@ -1307,55 +1314,46 @@ const TIPS = [
                 return () => clearInterval(tipInterval);
             }, []);
 
-            // New animation logic for a smooth, realistic progress bar
+            // Effect to handle the asset loading and progress tracking
             useEffect(() => {
-                // REMOVED: let animationFrameId;
-                const startTime = Date.now();
-                const SIMULATED_DURATION = 2800; // ms to reach the "almost complete" state
+                let loadedCount = 0;
+                let totalAssets = 0;
 
-                const animate = () => {
-                    const elapsed = Date.now() - startTime;
-                    const progressFraction = Math.min(elapsed / SIMULATED_DURATION, 1);
-                    
-                    // An ease-out function (cubic) makes it start fast and slow down
-                    const easedProgress = 1 - Math.pow(1 - progressFraction, 3);
-                    
-                    // We simulate loading up to 95%, then wait for the real assets
-                    const currentVisualProgress = easedProgress * 95;
-                    
-                    setVisualProgress(currentVisualProgress);
-
-                    if (progressFraction < 1) {
-                        animationFrameIdRef.current = requestAnimationFrame(animate); // USE REF
-                    }
+                const handleProgress = () => {
+                    loadedCount++;
+                    const newProgress = Math.round((loadedCount / totalAssets) * 100);
+                    setTargetProgress(newProgress);
                 };
 
-                if (!isFullyLoaded) {
-                    animationFrameIdRef.current = requestAnimationFrame(animate); // USE REF
-                } else {
-                    // If assets are already loaded when the component mounts, just finish
-                    setVisualProgress(100);
-                    setTimeout(() => setIsReady(true), 500);
-                }
+                // This function now returns the total count and the promise
+                const { assetPromise, count } = preloadAssets(handleProgress);
+                totalAssets = count;
 
-                return () => {
-                    if (animationFrameIdRef.current) { // USE REF
-                        cancelAnimationFrame(animationFrameIdRef.current); // USE REF
-                    }
-                };
-            }, []); // Run this simulation once on mount
-
-            // This effect triggers only when the actual loading finishes
-            useEffect(() => {
-                if (isFullyLoaded) {
-                    // Animate the final 5% and show the button
-                    cancelAnimationFrame(animationFrameIdRef.current); // <-- ADD THIS LINE to stop the old animation
-                    setVisualProgress(100);
+                assetPromise.then(() => {
+                    setTargetProgress(100); // Ensure it hits 100%
+                    // Wait a moment after loading is complete before showing the button
                     setTimeout(() => {
+                        onFinishedLoading();
                         setIsReady(true);
-                    }, 600); // A little delay for the bar to finish its animation
+                    }, 500);
+                });
+            }, [onFinishedLoading]);
+
+            // Effect to create the "stuttering" progress bar animation
+            useEffect(() => {
+                if (visualProgress < targetProgress) {
+                    if (stutterTimeoutRef.current) {
+                        clearTimeout(stutterTimeoutRef.current);
+                    }
+                    // Set a new timeout with a random delay to update the visual progress
+                    stutterTimeoutRef.current = setTimeout(() => {
+                        setVisualProgress(targetProgress);
+                    }, Math.random() * 250 + 50); // Random delay between 50ms and 300ms
                 }
-            }, [isFullyLoaded]);
+                 // Clean up the timeout if the component unmounts
+                return () => clearTimeout(stutterTimeoutRef.current);
+            }, [targetProgress]);
+
 
             return (
                 <div className="h-[100dvh] flex flex-col items-center justify-center p-8 bg-slate-950 text-center relative overflow-hidden animate-fadeIn">
@@ -1384,7 +1382,7 @@ const TIPS = [
                             ) : (
                                 <div className="w-full max-w-xs animate-fadeIn">
                                     <div className="w-full bg-slate-800/50 rounded-full h-2.5 mb-4 border border-white/5 overflow-hidden">
-                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${visualProgress}%` }}></div>
+                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-300 ease-out" style={{ width: `${visualProgress}%` }}></div>
                                     </div>
                                     <p key={currentTipIndex} className="text-white/60 font-medium text-sm animate-fadeIn h-10">
                                         <i className="fa-solid fa-lightbulb text-brand-400 mr-2"></i>
@@ -2086,8 +2084,8 @@ const TIPS = [
                 <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-slide-up relative z-10">
                     <div className="w-32 h-32 rounded-full flex items-center justify-center mb-10 relative">
                         <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full animate-pulse-slow"></div>
-                        <div className="glass-panel w-full h-full rounded-full flex items-center justify-center border border-white/10">
-                            <img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Detective" draggable="false" className="w-20 h-20" />
+                        <div className="glass-panel w-full h-full rounded-full flex items-center justify-center border border-white/10 overflow-hidden">
+                            <img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Detective" draggable="false" className="w-35 h-35 relative top-3" />
                         </div>
                     </div>
                     
@@ -2156,7 +2154,7 @@ const TIPS = [
                                         
                                         {word === "IMPOSTER" ? (
                                             <>
-                                                <div className="w-28 h-28 bg-red-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-red-500/30 shadow-[0_0_60px_rgba(239,68,68,0.2)] animate-pulse">
+                                                <div className="w-28 h-28 bg-red-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-red-500/30 shadow-[0_0_60px_rgba(239,68,68,0.2)]">
                                                     <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-16 h-16 drop-shadow-lg" />
                                                 </div>
                                                 <h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
@@ -2332,7 +2330,7 @@ const TIPS = [
                         audioManager.stopMusic(); 
 						audioManager.playSound('alarm');
                         
-                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                        if (navigator.vibrate) navigator.vibrate();
                         
                         // Host ends the game for everyone in online mode
                         if (isHost && lobbyId) {
@@ -2574,8 +2572,8 @@ const TIPS = [
                 if (isLocal) {
                     return (
                         <>
-                            <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
-                                <img src="https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png" alt="Ninja" draggable="false" className="w-24 h-24 drop-shadow-lg" />
+                            <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)] overflow-hidden">
+                                <img src="https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png" alt="Ninja" draggable="false" className="w-30 h-30 drop-shadow-lg relative top-3" />
                             </div>
                             <h2 className="text-3xl font-display font-bold text-white mb-2">{imposterPlayers.length > 1 ? "The Imposters Were..." : "The Imposter Was..."}</h2>
                             <p className="text-4xl font-black text-red-400 tracking-tight drop-shadow-sm">{imposterNames}</p>
@@ -2586,8 +2584,8 @@ const TIPS = [
                 if (gameResult.winner === 'imposter') {
                     return (
                         <>
-                         <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
-                            <img src="https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png" alt="Ninja" draggable="false" className="w-24 h-24 drop-shadow-lg" />
+                         <div className="w-28 h-28 bg-gradient-to-br from-red-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.2)] overflow-hidden">
+                            <img src="https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png" alt="Ninja" draggable="false" className="w-30 h-30 drop-shadow-lg relative top-3" />
                         </div>
                         <h2 className="text-3xl font-display font-bold text-red-400 mb-2">IMPOSTER WINS</h2>
                         <p className="text-white/60 mb-6 max-w-xs mx-auto">
@@ -2601,8 +2599,8 @@ const TIPS = [
                 } else { // Agents win
                      return (
                         <>
-                         <div className="w-28 h-28 bg-gradient-to-br from-teal-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-teal-500/40 shadow-[0_0_40px_rgba(20,184,166,0.1)]">
-                            <img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Detective" draggable="false" className="w-24 h-24 drop-shadow-lg" />
+                         <div className="w-28 h-28 bg-gradient-to-br from-teal-500/20 to-transparent rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-teal-500/40 shadow-[0_0_40px_rgba(20,184,166,0.1)] overflow-hidden">
+                            <img src="https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png" alt="Detective" draggable="false" className="w-35 h-35 drop-shadow-lg relative top-3" />
                         </div>
                         <h2 className="text-3xl font-display font-bold text-teal-400 mb-2">AGENTS WIN</h2>
                         <p className="text-white/60 mb-6 max-w-xs mx-auto">
@@ -2684,9 +2682,8 @@ const TIPS = [
         const generateLobbyId = () => generateRandomString(6, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
         const generateLobbyPassword = () => generateRandomString(4, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
 		
-		
-// --- NEW: Asset Preloading ---
-        const preloadAssets = () => {
+		// --- MODIFIED: Asset Preloading with Progress Callback ---
+        const preloadAssets = (onProgress) => {
             // --- Image Preloading ---
             const imageUrls = [
                 // General UI & Components
@@ -2711,8 +2708,12 @@ const TIPS = [
                 return new Promise((resolve) => {
                     const img = new Image();
                     img.src = src;
-                    img.onload = resolve;
-                    img.onerror = resolve;
+                    const assetLoaded = () => {
+                        if (onProgress) onProgress();
+                        resolve();
+                    };
+                    img.onload = assetLoaded;
+                    img.onerror = assetLoaded; // Resolve even on error to not block loading
                 });
             });
 
@@ -2721,7 +2722,7 @@ const TIPS = [
             Object.values(AUDIO_URLS).forEach(value => {
                 if (typeof value === 'string') {
                     allAudioUrls.push(value);
-                } else if (typeof value === 'object') { // Handles nested objects like 'categories'
+                } else if (typeof value === 'object') {
                     Object.values(value).forEach(nestedUrl => allAudioUrls.push(nestedUrl));
                 }
             });
@@ -2730,17 +2731,25 @@ const TIPS = [
             const audioPromises = uniqueAudioUrls.map(src => {
                 return new Promise((resolve) => {
                     const audio = new Audio();
-                    // 'canplaythrough' event signifies enough data is loaded to play without interruption
-                    audio.addEventListener('canplaythrough', resolve, { once: true });
-                    audio.addEventListener('error', resolve, { once: true }); // Resolve on error to not block loading
+                    const assetLoaded = () => {
+                        if (onProgress) onProgress();
+                        resolve();
+                    };
+                    audio.addEventListener('canplaythrough', assetLoaded, { once: true });
+                    audio.addEventListener('error', assetLoaded, { once: true });
                     audio.src = src;
-                    audio.load(); // Some browsers need this to start loading
+                    audio.load();
                 });
             });
             
-            // Combine all promises
-            return Promise.all([...imagePromises, ...audioPromises]);
+            // Combine all promises and return the total count
+            const allPromises = [...imagePromises, ...audioPromises];
+            return {
+                assetPromise: Promise.all(allPromises),
+                count: allPromises.length
+            };
         };
+
 
         // --- MAIN APP ---
         const App = () => {
@@ -2782,7 +2791,14 @@ const TIPS = [
 
             // Audio Manager, Mute State & Sync State
             const audioManagerRef = useRef(null);
-            const [isMuted, setIsMuted] = useState(false);
+            const [isMuted, setIsMuted] = useState(() => {
+                try {
+                    const savedMuteState = localStorage.getItem('imposter_isMuted');
+                    return savedMuteState !== null ? JSON.parse(savedMuteState) : false;
+                } catch {
+                    return false;
+                }
+            });
             const [currentMusic, setCurrentMusic] = useState(null);
             const [lastPlayedEventTimestamp, setLastPlayedEventTimestamp] = useState(0);
             
@@ -2910,8 +2926,14 @@ const TIPS = [
                 
                 audioManagerRef.current = manager;
             }, []);
+			
+			useEffect(() => {
+                if (audioManagerRef.current) {
+                    audioManagerRef.current.setMuted(isMuted);
+                }
+            }, []);
 
-            // Preloading, Auth, and URL Param Handling
+            // Auth, and URL Param Handling
             useEffect(() => {
                 // Read URL params ONCE on initial load
                 const params = new URLSearchParams(window.location.search);
@@ -2922,18 +2944,13 @@ const TIPS = [
                     // Clean the URL to prevent issues on refresh
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
-
-                const assetsPromise = preloadAssets();
+                
                 const authUnsubscribe = auth.onAuthStateChanged(firebaseUser => {
                     if (firebaseUser) {
                         setUser(firebaseUser);
                     } else {
                         auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error));
                     }
-                });
-
-                Promise.all([assetsPromise, new Promise(res => auth.onAuthStateChanged(res))]).then(() => {
-                    setAppReady(true);
                 });
 
                 const disableImageContextMenu = (e) => {
@@ -2988,6 +3005,11 @@ const TIPS = [
                 const newMutedState = !isMuted;
                 setIsMuted(newMutedState);
                 audioManagerRef.current?.setMuted(newMutedState);
+                try {
+                    localStorage.setItem('imposter_isMuted', JSON.stringify(newMutedState));
+                } catch (error) {
+                    console.error("Could not save mute state to local storage:", error);
+                }
             };
 
             // Firestore Listeners & Game Logic for Online Mode
@@ -3053,7 +3075,7 @@ const TIPS = [
 
                     const hostIsMissing = newPlayers.length > 0 && !newPlayers.some(p => p.id === currentLobbyDoc.hostId);
                     if (hostIsMissing) {
-                        const newHost = newPlayers[0];
+                        const newHost = newPlayers;
                         if (newHost && newHost.id === user.uid) {
                             console.log(`Host left. Promoting ${newHost.name} to new host.`);
                             lobbyRef.update({ hostId: newHost.id });
@@ -3119,7 +3141,7 @@ const TIPS = [
                     const allActualCategories = Object.keys(WORD_BANK);
                     finalCategory = allActualCategories[Math.floor(Math.random() * allActualCategories.length)];
                 } else {
-                    finalCategory = selectedCategories[0];
+                    finalCategory = selectedCategories;
                 }
                 const words = WORD_BANK[finalCategory];
                 const secretWord = words[Math.floor(Math.random() * words.length)];
@@ -3134,7 +3156,7 @@ const TIPS = [
                     imposterIndices,
                     secretWord,
                     duration,
-                    firstPlayer: shuffledPlayers[0].name,
+                    firstPlayer: shuffledPlayers.name,
                     category: finalCategory,
                     speakCategory,
                     turnOrder: shuffledPlayers.map((p, i) => ({ name: p.name, id: `local_${i}` }))
@@ -3308,16 +3330,23 @@ const TIPS = [
             };
             
             const handleStartActiveMission = () => {
-                db.collection('lobbies').doc(lobbyId).update({ 
-                    gameState: 'active', 
+                db.collection('lobbies').doc(lobbyId).update({
+                    gameState: 'active',
                     missionStartTime: firebase.firestore.FieldValue.serverTimestamp(),
                     duration: 3 * 60,
-                    lastSoundEvent: { 
-                        name: lobbyData.speakCategory ? 'category' : 'uiClick', 
+                    lastSoundEvent: {
+                        name: lobbyData.speakCategory ? 'category' : 'uiClick',
                         category: lobbyData.speakCategory ? lobbyData.category : null,
-                        timestamp: Date.now() 
+                        timestamp: Date.now()
                     }
                 });
+
+                // Add this cleanup timer to remove the sound event after it has been played
+                setTimeout(() => {
+                    db.collection('lobbies').doc(lobbyId).update({
+                        lastSoundEvent: firebase.firestore.FieldValue.delete()
+                    }).catch(err => console.log("Could not clear sound event, it might have been cleared already."));
+                }, 2000);
             }
 
             const handleEndGameOnline = () => {
@@ -3372,12 +3401,12 @@ const TIPS = [
                 }
                 
                 let result = {};
-                if (accusedIds.length === 1 && currentLobbyData.imposterIds.includes(accusedIds[0])) {
+                if (accusedIds.length === 1 && currentLobbyData.imposterIds.includes(accusedIds)) {
                     result = { winner: 'agents' };
                 } else if (accusedIds.length !== 1) {
                     result = { winner: 'imposter', reason: 'tie' };
                 } else {
-                    const accusedPlayer = lobbyPlayers.find(p => p.id === accusedIds[0]);
+                    const accusedPlayer = lobbyPlayers.find(p => p.id === accusedIds);
                     result = { winner: 'imposter', reason: 'wrong_vote', accusedName: accusedPlayer?.name || 'an agent' };
                 }
                 
@@ -3444,7 +3473,7 @@ const TIPS = [
             // --- RENDER LOGIC ---
             const renderContent = () => {
                 if (isLoading || !user) {
-                    return <LoadingScreen onStart={handleStart} isFullyLoaded={appReady} />;
+                    return <LoadingScreen onStart={handleStart} onFinishedLoading={() => setAppReady(true)} />;
                 }
 
                 if (gameMode === 'select') {
@@ -3493,7 +3522,7 @@ const TIPS = [
                     if (onlineState === 'active') {
                          return <GameTimerScreen 
                             lobbyData={lobbyData} onEndGame={handleEndGameOnline} 
-                            firstPlayer={lobbyData.turnOrder ? lobbyData.turnOrder[0].name : ''} audioManager={audioManagerRef.current} isHost={isHost} lobbyId={lobbyId}
+                            firstPlayer={lobbyData.turnOrder ? lobbyData.turnOrder.name : ''} audioManager={audioManagerRef.current} isHost={isHost} lobbyId={lobbyId}
                         />;
                     }
                     if (onlineState === 'voting') {
@@ -3505,7 +3534,7 @@ const TIPS = [
                             onRestart={handleRestartOnline} onBackToHome={handleBackToHome} audioManager={audioManagerRef.current} isHost={isHost}
                         />;
                     }
-                    return <LoadingScreen onStart={handleStart} isFullyLoaded={appReady} />; // Fallback
+                    return <LoadingScreen onStart={handleStart} onFinishedLoading={() => setAppReady(true)} />; // Fallback
                 }
             };
             
