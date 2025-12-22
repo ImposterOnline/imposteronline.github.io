@@ -305,7 +305,7 @@
         // --- END FIREBASE SETUP ---
 
         // --- DATA ---
-				const WORD_BANK = {
+		  const WORD_BANK = {
 		  Supercell: [
 			"Barbarian", "Archer", "Giant", "Goblin", "Wall Breaker", "Balloon", "Wizard", "Healer", "Dragon", "P.E.K.K.A", "Minion", "Hog Rider", "Valkyrie", "Golem", "Witch", "Lava Hound", "Bowler", "Baby Dragon", "Miner", "Electro Dragon", "Yeti", "Ice Golem", "Headhunter", "Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Knight", "Musketeer", "Prince", "Skeleton Army", "Goblin Barrel", "Giant Skeleton", "Royal Giant", "Elite Barbarians", "Mega Minion", "Ice Wizard", "Electro Wizard", "Inferno Dragon", "Night Witch", "Bandit", "Royal Ghost", "Magic Archer", "Lumberjack", "Ram Rider", "Fisherman", "Mother Witch", "Electro Giant", "Phoenix", "Monk", "Little Prince", "Cannon", "Tesla", "Mortar", "X-Bow", "Inferno Tower", "Bomb Tower", "Elixir Collector", "Skeletons", "Bats", "Fire Spirit", "Ice Spirit", "Electro Spirit", "Heal Spirit", "Rage", "Freeze", "Poison", "Fireball", "Arrows", "Zap", "Lightning", "Earthquake", "Clone", "Mirror", "Tornado", "Rocket", "Super Barbarian", "Super Archer", "Super Giant", "Super Wall Breaker", "Super Wizard", "Super Dragon", "Super Valkyrie", "Super Witch", "Super Minion", "Super Bowler", "Ice Hound", "Flying Machine", "Battle Ram", "Sparky", "Mega Knight", "Hunter", "Executioner", "Dart Goblin", "Princess", "Log", "Graveyard", "Mirror", "Giant Snowball", "Royal Delivery", "Heal", "Tombstone", "Bomb", "Hidden Tesla", "Air Defense", "Bomb Tower", "Seeking Air Mine", "Spring Trap", "Giant Bomb", "Red Air Bomb", "Town Hall", "Clan Castle", "Gold Mine", "Elixir Pump", "Barracks", "Laboratory", "Spell Factory", "Workshop", "Seige Machine", "Battle Machine", "Electrofire Wizard"
 		  ],
@@ -3156,7 +3156,7 @@
                     imposterIndices,
                     secretWord,
                     duration,
-                    firstPlayer: shuffledPlayers.name,
+                    firstPlayer: shuffledPlayers[0].name,
                     category: finalCategory,
                     speakCategory,
                     turnOrder: shuffledPlayers.map((p, i) => ({ name: p.name, id: `local_${i}` }))
