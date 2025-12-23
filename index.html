@@ -3522,7 +3522,7 @@
                     if (onlineState === 'active') {
                          return <GameTimerScreen 
                             lobbyData={lobbyData} onEndGame={handleEndGameOnline} 
-                            firstPlayer={lobbyData.turnOrder ? lobbyData.turnOrder.name : ''} audioManager={audioManagerRef.current} isHost={isHost} lobbyId={lobbyId}
+                            firstPlayer={lobbyData.turnOrder ? lobbyData.turnOrder[0].name : ''} audioManager={audioManagerRef.current} isHost={isHost} lobbyId={lobbyId}
                         />;
                     }
                     if (onlineState === 'voting') {
