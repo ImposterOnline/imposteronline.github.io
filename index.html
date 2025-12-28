@@ -2312,7 +2312,8 @@
 
             useEffect(() => {
                 if (!duration || !missionStartTime) {
-                    setTimeLeft(0);
+                    // If the mission start time isn't available yet, do nothing.
+                    // The timer will display its initial full duration until the start time arrives.
                     return;
                 }
 
@@ -2464,15 +2465,47 @@
         // 5. Voting Screen
         const VotingScreen = ({ lobbyData, lobbyPlayers, user, lobbyId, audioManager }) => {
             const me = lobbyPlayers.find(p => p.id === user.uid);
+            const [selectedVotes, setSelectedVotes] = useState([]);
+            const numImposters = lobbyData.imposterIds?.length || 1;
 
-            const handleVote = (targetPlayerId) => {
-                if (!me.votedFor) {
+            const handleSelectPlayer = (targetPlayerId) => {
+                audioManager.playSound('uiClick');
+                setSelectedVotes(prev => {
+                    if (prev.includes(targetPlayerId)) {
+                        return prev.filter(id => id !== targetPlayerId);
+                    }
+                    if (prev.length < numImposters) {
+                        return [...prev, targetPlayerId];
+                    }
+                    // If already at max votes, replace the last selection
+                    return [...prev.slice(0, prev.length - 1), targetPlayerId];
+                });
+            };
+
+            const handleConfirmVote = () => {
+                if (selectedVotes.length === numImposters) {
                     audioManager.playSound('uiClick');
                     db.collection('lobbies').doc(lobbyId).collection('players').doc(user.uid).update({
-                        votedFor: targetPlayerId
+                        votedFor: selectedVotes // vote is now an array
                     });
                 }
             };
+            
+            // New component to render a voted-for player's name safely
+            const VotedForName = ({ playerId }) => {
+                const player = lobbyPlayers.find(p => p.id === playerId);
+                return <span className="flex-1 text-right font-bold text-white truncate">{player ? player.name : 'Unknown'}</span>;
+            };
+            
+            const renderVotingRecord = (player) => {
+                if (!player.votedFor || !Array.isArray(player.votedFor)) {
+                     return <i className="fa-solid fa-ellipsis text-white/40"></i>;
+                }
+                if (player.votedFor.length > 0) {
+                    return <i className="fa-solid fa-check text-green-400 animate-fadeIn"></i>;
+                }
+                return <i className="fa-solid fa-ellipsis text-white/40"></i>;
+            }
 
             return (
                 <div className="h-[100dvh] flex flex-col items-center justify-start pt-16 p-6 text-center overflow-y-auto no-scrollbar relative animate-fadeIn">
@@ -2488,13 +2521,18 @@
                             </div>
                         </div>
                         <h1 className="text-4xl font-display font-bold text-white mb-4">Who is the Imposter?</h1>
-                        <p className="text-white/60 mb-10">Cast your vote. The agent with the most votes will be revealed.</p>
+                        <p className="text-white/60 mb-10">{numImposters > 1 ? `Select the ${numImposters} agents you believe are the imposters.` : "Cast your vote. The agent with the most votes will be revealed."}</p>
 
-                        {me?.votedFor ? (
+                        {me?.votedFor && me.votedFor.length > 0 ? (
                              <div className="w-full max-w-sm">
                                 <div className="glass-panel p-8 rounded-2xl mb-6 text-center">
                                     <i className="fa-solid fa-check-circle text-green-400 text-4xl mb-4"></i>
                                     <h3 className="text-xl font-bold text-white mb-2">Vote Cast!</h3>
+                                    <p className="text-white/50 text-sm mb-4">You voted for:</p>
+                                    <div className="flex flex-col gap-2 items-center">
+                                        {me.votedFor.map(voteId => <VotedForName key={voteId} playerId={voteId} />)}
+                                    </div>
+                                    <hr className="border-white/10 my-4" />
                                     <p className="text-white/50 text-sm">Waiting for other agents to vote.</p>
                                 </div>
                                 <div className="glass-panel p-6 rounded-2xl">
@@ -2503,35 +2541,41 @@
                                         {lobbyPlayers.map(player => (
                                             <div key={player.id} className="flex items-center justify-between bg-white/5 px-4 py-3 rounded-lg">
                                                 <span className="font-semibold text-white/90">{player.name}</span>
-                                                {player.votedFor ? (
-                                                    <i className="fa-solid fa-check text-green-400 animate-fadeIn"></i>
-                                                ) : (
-                                                    <i className="fa-solid fa-ellipsis text-white/40"></i>
-                                                )}
+                                                {renderVotingRecord(player)}
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full flex flex-col gap-3">
-                                {lobbyPlayers.filter(p => p.id !== user.uid).map(player => (
-                                    <button 
-                                        key={player.id} 
-                                        onClick={() => handleVote(player.id)}
-                                        className="w-full text-left p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all flex items-center gap-4 active:scale-95"
-                                    >
-                                        <i className="fa-solid fa-user text-white/40"></i>
-                                        <span className="font-bold text-lg">{player.name}</span>
-                                    </button>
-                                ))}
-                            </div>
+                            <>
+                                <div className="w-full flex flex-col gap-3">
+                                    {lobbyPlayers.filter(p => p.id !== user.uid).map(player => (
+                                        <button 
+                                            key={player.id} 
+                                            onClick={() => handleSelectPlayer(player.id)}
+                                            className={`w-full text-left p-4 rounded-xl transition-all flex items-center gap-4 active:scale-95 border ${selectedVotes.includes(player.id) ? 'bg-brand-500/20 border-brand-400' : 'bg-white/5 hover:bg-white/10 border-transparent'}`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${selectedVotes.includes(player.id) ? 'bg-brand-500 border-brand-400' : 'border-white/20'}`}>
+                                                {selectedVotes.includes(player.id) && <i className="fa-solid fa-check text-xs text-white"></i>}
+                                            </div>
+                                            <span className="font-bold text-lg">{player.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={handleConfirmVote}
+                                    disabled={selectedVotes.length !== numImposters}
+                                    className="w-full mt-6 bg-red-600 text-white font-display font-bold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none"
+                                >
+                                    Confirm Vote ({selectedVotes.length}/{numImposters})
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
             )
         };
-
 
 		// 6. Results Screen
         const ResultScreen = ({ lobbyData, lobbyPlayers, onRestart, onBackToHome, audioManager, isHost, isLocal }) => {
@@ -3392,35 +3436,71 @@
             const calculateResults = async (currentLobbyData, currentLobbyPlayers) => {
                 if (currentLobbyData.gameState !== 'voting') return;
 
+                const numImposters = currentLobbyData.imposterIds?.length || 1;
+
+                // Tally all votes. Since votedFor is an array, we iterate through it.
                 const voteCounts = currentLobbyPlayers.reduce((acc, p) => {
-                    if (p.votedFor) acc[p.votedFor] = (acc[p.votedFor] || 0) + 1;
+                    if (p.votedFor && Array.isArray(p.votedFor)) {
+                        p.votedFor.forEach(voteId => {
+                            acc[voteId] = (acc[voteId] || 0) + 1;
+                        });
+                    }
                     return acc;
                 }, {});
 
-                let maxVotes = 0; let accusedIds = [];
-                for (const playerId in voteCounts) {
-                    if (voteCounts[playerId] > maxVotes) {
-                        maxVotes = voteCounts[playerId];
-                        accusedIds = [playerId];
-                    } else if (voteCounts[playerId] === maxVotes) {
-                        accusedIds.push(playerId);
+                // Sort players by votes to find the most accused
+                const sortedAccused = Object.entries(voteCounts).sort(([, a], [, b]) => b - a);
+
+                let result = {};
+
+                if (numImposters === 1) {
+                    const maxVotes = sortedAccused.length > 0 ? sortedAccused[0][1] : 0;
+                    const accusedIds = sortedAccused.filter(([, votes]) => votes === maxVotes).map(([id]) => id);
+
+                    if (accusedIds.length === 1 && currentLobbyData.imposterIds.includes(accusedIds[0])) {
+                        result = { winner: 'agents' };
+                    } else if (accusedIds.length !== 1) {
+                        result = { winner: 'imposter', reason: 'tie' };
+                    } else {
+                        const accusedPlayer = currentLobbyPlayers.find(p => p.id === accusedIds[0]);
+                        result = { winner: 'imposter', reason: 'wrong_vote', accusedName: accusedPlayer?.name || 'an agent' };
+                    }
+                } else { // Logic for 2 imposters
+                    const accusedTopTwoIds = sortedAccused.slice(0, 2).map(([id]) => id);
+
+                    // Check for ties that would disrupt a clear top two
+                    const isTieForSecond = sortedAccused.length > 2 && sortedAccused[1][1] === sortedAccused[2][1];
+
+                    if (accusedTopTwoIds.length < 2 || isTieForSecond) {
+                        // Not enough votes or an unclear result means imposters win
+                        result = { winner: 'imposter', reason: 'tie' };
+                    } else {
+                        const correctlyIdentified = accusedTopTwoIds.every(id => currentLobbyData.imposterIds.includes(id));
+                        if (correctlyIdentified) {
+                            result = { winner: 'agents' };
+                        } else {
+                            // If even one of the top two is an agent, imposters win
+                            const accusedPlayer = currentLobbyPlayers.find(p => p.id === accusedTopTwoIds.find(id => !currentLobbyData.imposterIds.includes(id)));
+                            result = { winner: 'imposter', reason: 'wrong_vote', accusedName: accusedPlayer?.name || 'an agent' };
+                        }
                     }
                 }
                 
-                let result = {};
-                if (accusedIds.length === 1 && currentLobbyData.imposterIds.includes(accusedIds)) {
-                    result = { winner: 'agents' };
-                } else if (accusedIds.length !== 1) {
-                    result = { winner: 'imposter', reason: 'tie' };
-                } else {
-                    const accusedPlayer = lobbyPlayers.find(p => p.id === accusedIds);
-                    result = { winner: 'imposter', reason: 'wrong_vote', accusedName: accusedPlayer?.name || 'an agent' };
-                }
-                
-                const votingRecord = currentLobbyPlayers.map(voter => ({
-                    voterId: voter.id, voterName: voter.name,
-                    votedForName: currentLobbyPlayers.find(p => p.id === voter.votedFor)?.name || 'No Vote'
-                }));
+                // Update the voting record to handle the new array format
+                const votingRecord = currentLobbyPlayers.flatMap(voter => {
+                    if (!voter.votedFor || voter.votedFor.length === 0) {
+                         return [{
+                            voterId: voter.id,
+                            voterName: voter.name,
+                            votedForName: 'No Vote'
+                        }];
+                    }
+                    return voter.votedFor.map(voteId => ({
+                        voterId: voter.id,
+                        voterName: voter.name,
+                        votedForName: currentLobbyPlayers.find(p => p.id === voteId)?.name || 'Unknown'
+                    }));
+                });
 
                 await db.collection('lobbies').doc(lobbyId).update({ 
                     gameState: 'result', gameResult: result, votingRecord
