@@ -2370,6 +2370,13 @@
             const [timeLeft, setTimeLeft] = useState(duration || 0);
             const timerRef = useRef(null);
 
+            // Force the timer music to play as soon as the screen is shown
+            useEffect(() => {
+                if (audioManager) {
+                    audioManager.playMusic('timerMusic');
+                }
+            }, [audioManager]);
+
             useEffect(() => {
                 if (!duration || !missionStartTime) {
                     return;
