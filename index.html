@@ -710,15 +710,20 @@
             const [isJoining, setIsJoining] = useState(true);
             const [lobbyId, setLobbyId] = useState('');
             const [password, setPassword] = useState('');
-            const [username, setUsername] = useState('');
+            
+            // FIX: Load username immediately from storage so avatar is there instantly
+            const [username, setUsername] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('imposter_username');
+                    return saved ? JSON.parse(saved) : '';
+                } catch { return ''; }
+            });
+            
             const [error, setError] = useState('');
             const [isLoading, setIsLoading] = useState(false);
 
             useEffect(() => {
                 try {
-                    const saved = localStorage.getItem('imposter_username');
-                    if (saved) setUsername(JSON.parse(saved));
-
                     // Prioritize initialParams from props (passed from App component)
                     if (initialParams && initialParams.lobbyId) {
                         setLobbyId(initialParams.lobbyId.toUpperCase());
@@ -779,7 +784,7 @@
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         placeholder="Enter codename..."
-                                        className="flex-1 bg-transparent px-5 py-4 outline-none placeholder:text-white/20 font-medium text-sm text-white"
+                                        className="flex-1 bg-transparent px-5 py-4 outline-none placeholder:text-white/20 font-medium text-sm text-white min-w-0"
                                     />
                                     {username.trim() && <PlayerAvatar name={username} className="w-8 h-8 rounded-full" />}
                                 </div>
@@ -1834,7 +1839,7 @@
                                             onChange={(e) => setNewPlayerName(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
                                             placeholder="Enter codename..."
-                                            className="flex-1 bg-transparent px-5 py-4 outline-none placeholder:text-white/20 font-medium text-sm text-white"
+                                            className="flex-1 bg-transparent px-5 py-4 outline-none placeholder:text-white/20 font-medium text-sm text-white min-w-0"
                                         />
                                         {newPlayerName.trim() && <PlayerAvatar name={newPlayerName} className="w-8 h-8 rounded-full" />}
                                     </div>
@@ -2667,7 +2672,11 @@
             const currentPlayerCount = lobbyPlayers.length;
             const notAllPlayersPresent = !isLocal && originalPlayerCount > 0 && originalPlayerCount !== currentPlayerCount;
 
+            const soundPlayedRef = useRef(false);
+
             useEffect(() => {
+                if (soundPlayedRef.current) return;
+
                 let soundToPlay = null;
                 if (isLocal) {
                     soundToPlay = audioManager.getSound('imposterWin');
@@ -2678,13 +2687,15 @@
                 }
 
                 if (soundToPlay) {
+                    soundPlayedRef.current = true;
                     soundToPlay.currentTime = 0;
                     soundToPlay.play().catch(e => console.error("Result music failed to play:", e));
                 }
-
-                return () => { 
+                
+                return () => {
                     if (soundToPlay) {
                         soundToPlay.pause();
+                        soundToPlay.currentTime = 0;
                     }
                 };
             }, [audioManager, gameResult, isLocal]);
@@ -2941,7 +2952,7 @@
                 }
             });
             const [currentMusic, setCurrentMusic] = useState(null);
-            const [lastPlayedEventTimestamp, setLastPlayedEventTimestamp] = useState(0);
+            const lastPlayedEventTimestamp = useRef(0);
             
             // --- Refs to hold the latest state for use in Firestore listeners ---
             const latestLobbyData = useRef(lobbyData);
@@ -2970,7 +2981,7 @@
                 const manager = {
                     sounds: {},
                     music: {},
-                    isMuted: false,
+                    isMuted: isMuted, // FIX: Initialize with current state immediately
                     isUnlocked: false, // Audio permission flag
                     currentMusicTrack: null,
                     
@@ -2980,6 +2991,7 @@
                         const audio = new Audio(url);
                         audio.loop = options.loop || false;
                         audio.volume = options.volume || 1.0;
+                        audio.muted = this.isMuted; // FIX: Apply mute state on creation
                         audio.preload = 'auto';
                         
                         if (options.isMusic) {
@@ -3072,7 +3084,7 @@
                 if (audioManagerRef.current) {
                     audioManagerRef.current.setMuted(isMuted);
                 }
-            }, []);
+            }, [isMuted]);
 
             // Auth, and URL Param Handling
             useEffect(() => {
@@ -3173,10 +3185,10 @@
 							lastSeenRestartTimestampRef.current = data.lastRestartReason.timestamp;
 						}
                         
-                        if (data.lastSoundEvent && data.lastSoundEvent.timestamp > lastPlayedEventTimestamp) {
+                        if (data.lastSoundEvent && data.lastSoundEvent.timestamp > lastPlayedEventTimestamp.current) {
                             const soundName = data.lastSoundEvent.name;
                             audioManagerRef.current.playSound(soundName, data.lastSoundEvent.category || null);
-                            setLastPlayedEventTimestamp(data.lastSoundEvent.timestamp);
+                            lastPlayedEventTimestamp.current = data.lastSoundEvent.timestamp;
                         }
                     } else {
                         const wasIHost = latestLobbyData.current?.hostId === user.uid;
