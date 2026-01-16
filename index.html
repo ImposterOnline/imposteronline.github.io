@@ -3262,11 +3262,13 @@
         const generateLobbyId = () => generateRandomString(6, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
         const generateLobbyPassword = () => generateRandomString(4, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
 		
-		// --- MODIFIED: Asset Preloading with Progress Callback ---
+		// --- CORRECTED & RELIABLE: Asset Preloading without Fetch ---
         const preloadAssets = (onProgress) => {
-            // --- Image Preloading ---
-            const imageUrls = [
-                // General UI & Components
+            const imageUrls = new Set();
+            const audioUrls = new Set();
+
+            // 1. Gather all static UI and background images
+            [
                 'https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png',
                 'https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png',
                 'https://em-content.zobj.net/source/microsoft-teams/337/locked_1f512.png',
@@ -3275,61 +3277,65 @@
                 'https://em-content.zobj.net/source/microsoft-teams/337/ninja_medium-light-skin-tone_1f977-1f3fc_1f3fc.png',
                 'https://em-content.zobj.net/source/microsoft-teams/337/three-oclock_1f552.png',
                 'https://www.clashchamps.com/wp-content/uploads/2024/06/czJOx2-Q.png',
-                'https://static0.srcdn.com/wordpress/wp-content/uploads/2021/4/Three-new-Clash-of-Clans-games-announced.jpg',
-            ];
+                'https://wallpapercat.com/w/full/0/4/f/283609-2500x1466-desktop-hd-clash-of-clans-wallpaper.jpg',
+                'https://em-content.zobj.net/source/microsoft-teams/337/direct-hit_1f3af.png',
+                'https://em-content.zobj.net/source/microsoft-teams/363/speaking-head_1f5e3-fe0f.png',
+                'https://em-content.zobj.net/source/microsoft-teams/363/eyes_1f440.png',
+                'https://images.emojiterra.com/microsoft/fluent-emoji/15.1/3d/1f3ad_3d.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/face-with-monocle_1f9d0.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/busts-in-silhouette_1f465.png',
+                'https://em-content.zobj.net/source/microsoft-teams/337/hammer-and-pick_2692-fe0f.png',
+                'https://www.catholicnewsagency.com/images/three-kings.jpg?jpg',
+                'https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg'
+            ].forEach(url => imageUrls.add(url));
 
+            // 2. Gather all CATEGORY_ICONS
             Object.values(CATEGORY_ICONS).forEach(icon => {
-                if (Array.isArray(icon)) { imageUrls.push(...icon); } 
-                else { imageUrls.push(icon); }
+                if (Array.isArray(icon)) {
+                    icon.forEach(url => imageUrls.add(url));
+                } else if (icon) {
+                    imageUrls.add(icon);
+                }
             });
 
-            const uniqueImageUrls = [...new Set(imageUrls)];
-            const imagePromises = uniqueImageUrls.map(src => {
-                return new Promise((resolve) => {
+            // 3. Gather all AUDIO_URLS
+            Object.values(AUDIO_URLS).forEach(value => {
+                if (typeof value === 'string') {
+                    audioUrls.add(value);
+                } else if (typeof value === 'object' && value !== null) {
+                    Object.values(value).forEach(nestedUrl => audioUrls.add(nestedUrl));
+                }
+            });
+
+            const imagePromises = Array.from(imageUrls).map(src => {
+                return new Promise(resolve => {
+                    if (!src || typeof src !== 'string') return resolve();
                     const img = new Image();
                     img.src = src;
-                    const assetLoaded = () => {
-                        if (onProgress) onProgress();
-                        resolve();
-                    };
+                    const assetLoaded = () => { if (onProgress) onProgress(); resolve(); };
                     img.onload = assetLoaded;
-                    img.onerror = assetLoaded; // Resolve even on error to not block loading
+                    img.onerror = assetLoaded;
                 });
             });
 
-            // --- Audio Preloading ---
-            const allAudioUrls = [];
-            Object.values(AUDIO_URLS).forEach(value => {
-                if (typeof value === 'string') {
-                    allAudioUrls.push(value);
-                } else if (typeof value === 'object') {
-                    Object.values(value).forEach(nestedUrl => allAudioUrls.push(nestedUrl));
-                }
-            });
-            
-            const uniqueAudioUrls = [...new Set(allAudioUrls)];
-            const audioPromises = uniqueAudioUrls.map(src => {
-                return new Promise((resolve) => {
+            const audioPromises = Array.from(audioUrls).map(src => {
+                return new Promise(resolve => {
+                    if (!src || typeof src !== 'string') return resolve();
                     const audio = new Audio();
-                    const assetLoaded = () => {
-                        if (onProgress) onProgress();
-                        resolve();
-                    };
+                    const assetLoaded = () => { if (onProgress) onProgress(); resolve(); };
                     audio.addEventListener('canplaythrough', assetLoaded, { once: true });
                     audio.addEventListener('error', assetLoaded, { once: true });
                     audio.src = src;
-                    audio.load();
+                    audio.load(); // Important: explicitly tell the browser to start loading
                 });
             });
-            
-            // Combine all promises and return the total count
+
             const allPromises = [...imagePromises, ...audioPromises];
             return {
                 assetPromise: Promise.all(allPromises),
                 count: allPromises.length
             };
         };
-
 
         // --- MAIN APP ---
         const App = () => {
@@ -3406,113 +3412,139 @@
             
             // Initialize Audio Manager
             useEffect(() => {
+                // Ensure this only runs once
                 if (audioManagerRef.current) return;
-                
-                const musicTracks = ['mainMenuMusic', 'categorySelectionMusic', 'timerMusic', 'christmasMainMenuMusic', 'halloweenMainMenuMusic'];
-                const sfxTracks = Object.keys(AUDIO_URLS).filter(k => k !== 'categories' && !musicTracks.includes(k));
-
+            
                 const manager = {
                     sounds: {},
                     music: {},
                     isMuted: isMuted,
                     isUnlocked: false,
                     currentMusicTrack: null,
-                    
-                    unlockAudio: function() { this.isUnlocked = true; },
-
+            
+                    // This function is crucial. It must be called by a user interaction (e.g., a click).
+                    unlockAudio: function() {
+                        if (this.isUnlocked) return;
+                        this.isUnlocked = true;
+                        // A common trick to "wake up" the audio context in some browsers
+                        const silentSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+                        silentSound.play().catch(() => {});
+                    },
+            
+                    // Initialize a single sound
                     initSound: function(name, url, options = {}) {
-                        const audio = new Audio(url);
-                        audio.loop = options.loop || false;
-                        audio.volume = options.volume || 1.0;
-                        audio.preload = 'auto';
-                        
-                        if (options.isMusic) {
-                            this.music[name] = audio;
-                        } else {
-                            this.sounds[name] = audio;
+                        try {
+                            const audio = new Audio(url);
+                            audio.loop = options.loop || false;
+                            audio.volume = options.volume || 1.0;
+                            audio.preload = 'auto';
+                            
+                            if (options.isMusic) {
+                                this.music[name] = audio;
+                            } else {
+                                this.sounds[name] = audio;
+                            }
+                        } catch (e) {
+                            console.error(`Failed to initialize sound: ${name}`, e);
                         }
                     },
+            
                     playSound: function(name, category = null) {
                         if (!this.isUnlocked) return;
-                        let sound = this.sounds[name];
-                        if (name === 'category' && category && this.sounds.categories[category]) {
-                            sound = this.sounds.categories[category];
+            
+                        let soundToPlay = null;
+                        if (name === 'category' && category && this.sounds.categories && this.sounds.categories[category]) {
+                            soundToPlay = this.sounds.categories[category];
+                        } else {
+                            soundToPlay = this.sounds[name];
                         }
-                        if (sound) {
-                            sound.currentTime = 0;
-                            const playPromise = sound.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(error => { /* Autoplay was prevented */ });
-                            }
+            
+                        if (soundToPlay) {
+                            soundToPlay.currentTime = 0;
+                            soundToPlay.play().catch(error => {
+                                // This error often happens if the user hasn't interacted yet.
+                                // It's generally safe to ignore in this context.
+                            });
                         }
                     },
-                    getSound: function(name) { return this.sounds[name]; },
-					stopSound: function(name) {
-                        if (!this.isUnlocked) return;
-						const sound = this.sounds[name];
-						if (sound) {
-							sound.pause();
-							sound.currentTime = 0;
-						}
-					},
-                    
+            
                     playMusic: function(name) {
-                        if (!this.isUnlocked) return;
-                        if (this.currentMusicTrack === name && !this.music[name].paused) return;
-
+                        if (!this.isUnlocked || (this.currentMusicTrack === name && this.music[name] && !this.music[name].paused)) return;
+            
                         this.stopMusic();
                         const track = this.music[name];
                         if (track) {
                             this.currentMusicTrack = name;
                             track.muted = this.isMuted;
-                            const playPromise = track.play();
-                            if (playPromise) playPromise.catch(()=>{});
+                            track.play().catch(() => {});
                         }
                     },
+            
                     stopMusic: function() {
                         if (this.currentMusicTrack && this.music[this.currentMusicTrack]) {
                             const track = this.music[this.currentMusicTrack];
-                            track.pause();
-                            track.currentTime = 0;
+                            if (!track.paused) {
+                                track.pause();
+                                track.currentTime = 0;
+                            }
                         }
                         this.currentMusicTrack = null;
                     },
+
+                    stopSound: function(name) {
+						if (!this.isUnlocked) return;
+						const sound = this.sounds[name];
+						if (sound && !sound.paused) {
+							sound.pause();
+							sound.currentTime = 0;
+						}
+					},
+            
                     setMuted: function(muted) {
                         this.isMuted = muted;
-                        Object.values(this.music).forEach(track => track.muted = muted);
+                        Object.values(this.music).forEach(track => {
+                            track.muted = muted;
+                        });
                     },
+            
                     pauseAllMusic: function() {
                         if (this.currentMusicTrack && this.music[this.currentMusicTrack]) {
                             this.music[this.currentMusicTrack].pause();
                         }
                     },
+            
                     resumeAllMusic: function() {
-                        if (!this.isUnlocked) return;
-                        if (this.currentMusicTrack && this.music[this.currentMusicTrack]) {
-                            this.music[this.currentMusicTrack].play().catch(()=>{});
+                        if (this.isUnlocked && this.currentMusicTrack && this.music[this.currentMusicTrack]) {
+                            this.music[this.currentMusicTrack].play().catch(() => {});
                         }
-                    }
+                    },
+                    getSound: function(name) { return this.sounds[name]; }
                 };
+            
+                // --- Initialize all sounds defined in AUDIO_URLS ---
+                const musicTracks = ['mainMenuMusic', 'categorySelectionMusic', 'timerMusic', 'christmasMainMenuMusic', 'halloweenMainMenuMusic'];
                 
-                // Initialize SFX
-                sfxTracks.forEach(key => manager.initSound(key, AUDIO_URLS[key]));
+                Object.entries(AUDIO_URLS).forEach(([key, value]) => {
+                    if (typeof value === 'string') {
+                        const isMusic = musicTracks.includes(key);
+                        // Define special options for specific sounds
+                        let options = { isMusic, loop: isMusic };
+                        if (key === 'categorySelectionMusic') options.volume = 0.7;
+                        if (key === 'timerMusic') options.volume = 0.5;
+                        if (key === 'turnOrderReveal') options.volume = 0.6;
+                        
+                        manager.initSound(key, value, options);
 
-                // Initialize Music
-                manager.initSound('mainMenuMusic', AUDIO_URLS.mainMenuMusic, { loop: true, isMusic: true });
-                manager.initSound('christmasMainMenuMusic', AUDIO_URLS.christmasMainMenuMusic, { loop: true, isMusic: true });
-                manager.initSound('halloweenMainMenuMusic', AUDIO_URLS.halloweenMainMenuMusic, { loop: true, isMusic: true });
-                manager.initSound('categorySelectionMusic', AUDIO_URLS.categorySelectionMusic, { loop: true, isMusic: true, volume: 0.7 });
-                manager.initSound('timerMusic', AUDIO_URLS.timerMusic, { loop: true, isMusic: true, volume: 0.5 });
-                manager.initSound('turnOrderReveal', AUDIO_URLS.turnOrderReveal, { volume: 0.6 });
-                
-                // Initialize Voiceovers
-                manager.sounds.categories = {};
-                for (const cat in AUDIO_URLS.categories) { 
-                    const audio = new Audio(AUDIO_URLS.categories[cat]);
-                    audio.preload = 'auto';
-                    manager.sounds.categories[cat] = audio;
-                }
-                
+                    } else if (key === 'categories') {
+                        manager.sounds.categories = {};
+                        Object.entries(value).forEach(([cat, url]) => {
+                             const audio = new Audio(url);
+                             audio.preload = 'auto';
+                             manager.sounds.categories[cat] = audio;
+                        });
+                    }
+                });
+            
                 audioManagerRef.current = manager;
             }, []);
 			
