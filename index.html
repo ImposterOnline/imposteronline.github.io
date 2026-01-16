@@ -698,20 +698,41 @@
 			};
 			
 			const useSwipe = (onSwipeLeft, onSwipeRight) => {
-				const [touchStart, setTouchStart] = React.useState(null);
-				const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
-				const handleTouchMove = (e) => {
-					if (touchStart === null) return;
-					const diff = touchStart - e.targetTouches[0].clientX;
-					if (diff > 20) {
-						onSwipeLeft();
-						setTouchStart(null);
-					} else if (diff < -20) {
-						onSwipeRight();
-						setTouchStart(null);
-					}
+				const [touchStartCoords, setTouchStartCoords] = React.useState(null);
+
+				const handleTouchStart = (e) => {
+					setTouchStartCoords({
+						x: e.targetTouches[0].clientX,
+						y: e.targetTouches[0].clientY,
+					});
 				};
-                const handleTouchEnd = () => setTouchStart(null);
+
+				const handleTouchMove = (e) => {
+					if (!touchStartCoords) return;
+
+					const currentX = e.targetTouches[0].clientX;
+					const currentY = e.targetTouches[0].clientY;
+					const diffX = touchStartCoords.x - currentX;
+					const diffY = touchStartCoords.y - currentY;
+					
+					// Only consider it a swipe if horizontal movement is greater than vertical
+					if (Math.abs(diffX) > Math.abs(diffY)) {
+						// Now check if the swipe is significant enough
+						if (diffX > 20) { // Swiped left
+							onSwipeLeft();
+							setTouchStartCoords(null); // Reset to prevent multiple triggers
+						} else if (diffX < -20) { // Swiped right
+							onSwipeRight();
+							setTouchStartCoords(null); // Reset to prevent multiple triggers
+						}
+					}
+					// If diffY is greater, do nothing, allowing the default scroll behavior
+				};
+				
+				const handleTouchEnd = () => {
+					setTouchStartCoords(null); // Reset on touch end
+				};
+
 				return { onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd };
 			};
 			
