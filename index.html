@@ -6,7 +6,7 @@
     <title>Imposter • Find the Spy</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="https://em-content.zobj.net/source/microsoft/379/disguised-face_1f978.png" type="image/png">
+    <link rel="icon" id="favicon" href="https://em-content.zobj.net/source/microsoft/379/disguised-face_1f978.png" type="image/png">
 
 	<!-- Social Media / Share Metadata (Open Graph & Twitter) -->
     <meta property="og:title" content="Imposter • Find the Spy" />
@@ -14,7 +14,7 @@
     
     <meta property="og:url" content="https://imposteronline.github.io/" />
     
-    <meta property="og:image" content="https://www.pngall.com/wp-content/uploads/19/Shh-Emoji-Gentle-Reminder-Icon-PNG.png" />
+    <meta property="og:image" id="og-image" content="https://www.pngall.com/wp-content/uploads/19/Shh-Emoji-Gentle-Reminder-Icon-PNG.png" />
     
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -22,7 +22,47 @@
     <meta name="twitter:description" content="Can you blend in? Find the spy before time runs out. Play with friends online or on one device!" />
     
     <!-- Same image link as above -->
-    <meta name="twitter:image" content="https://www.pngall.com/wp-content/uploads/19/Shh-Emoji-Gentle-Reminder-Icon-PNG.png" />
+    <meta name="twitter:image" id="twitter-image" content="https://www.pngall.com/wp-content/uploads/19/Shh-Emoji-Gentle-Reminder-Icon-PNG.png" />
+
+    <!-- DYNAMIC METADATA SCRIPT -->
+    <script>
+        (function() {
+            const getSeasonalInfo = () => {
+                const now = new Date();
+                const month = now.getMonth() + 1; // 0-indexed
+                const day = now.getDate();
+                
+                // Halloween: Oct 24 - Nov 7
+                if ((month === 10 && day >= 24) || (month === 11 && day <= 7)) {
+                    return 'halloween';
+                }
+
+                // Christmas: Dec 18 - Jan 1
+                if ((month === 12 && day >= 18) || (month === 1 && day <= 1)) {
+                    return 'christmas';
+                }
+                
+                return 'default';
+            };
+
+            const season = getSeasonalInfo();
+            const images = {
+                christmas: "https://icons.iconarchive.com/icons/microsoft/fluentui-emoji-3d/1024/Snowman-3d-icon.png",
+                halloween: "https://icons.iconarchive.com/icons/microsoft/fluentui-emoji-3d/1024/Jack-O-Lantern-3d-icon.png"
+            };
+
+            if (images[season]) {
+                const imageUrl = images[season];
+                const favicon = document.getElementById('favicon');
+                const ogImage = document.getElementById('og-image');
+                const twitterImage = document.getElementById('twitter-image');
+
+                if (favicon) favicon.href = imageUrl;
+                if (ogImage) ogImage.content = imageUrl;
+                if (twitterImage) twitterImage.content = imageUrl;
+            }
+        })();
+    </script>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -465,7 +505,7 @@
             Music: "https://em-content.zobj.net/source/microsoft-teams/337/musical-notes_1f3b6.png",
             School: "https://em-content.zobj.net/source/microsoft-teams/337/woman-teacher-light-skin-tone_1f469-1f3fb-200d-1f3eb.png",
             Christmas: [
-                "https://images.emojiterra.com/microsoft/fluent-emoji/15.1/3d/1f384_3d.png",
+                "https://em-content.zobj.net/source/microsoft-teams/364/christmas-tree_1f384.png",
                 "https://em-content.zobj.net/source/microsoft-teams/337/santa-claus_light-skin-tone_1f385-1f3fb_1f3fb.png",
                 "https://em-content.zobj.net/source/microsoft-teams/364/snowman_2603-fe0f.png",
                 "https://em-content.zobj.net/source/microsoft-teams/337/snowflake_2744-fe0f.png"
@@ -581,6 +621,42 @@
         const roundedWordCount = Math.floor(totalWords / 250) * 250;
         
         // --- COMPONENTS ---
+
+        const SeasonalTitle = ({ season, className }) => {
+            const baseClassName = className || "text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 drop-shadow-lg tracking-tight";
+
+            if (season === 'christmas') {
+                return (
+                    <h1 className={`${baseClassName} flex items-center justify-center`}>
+                        <span>IMPOS</span>
+                        <img 
+                            src="https://em-content.zobj.net/source/microsoft-teams/364/christmas-tree_1f384.png" 
+                            alt="T" 
+                            className="inline-block w-[1em] h-[1em] mx-[-0.1em] -mb-[0.0em] drop-shadow-lg"
+                            draggable="false"
+                        />
+                        <span>ER</span>
+                    </h1>
+                );
+            }
+
+            if (season === 'halloween') {
+                 return (
+                    <h1 className={`${baseClassName} flex items-center justify-center`}>
+                        <span>IMP</span>
+                        <img 
+                            src="https://em-content.zobj.net/source/microsoft-teams/337/jack-o-lantern_1f383.png" 
+                            alt="O" 
+                            className="inline-block w-[1em] h-[1em] mx-[0.0em] mb-[0.05em] drop-shadow-lg"
+                            draggable="false"
+                        />
+                        <span>STER</span>
+                    </h1>
+                );
+            }
+
+            return <h1 className={baseClassName}>IMPOSTER</h1>;
+        };
 
         const PlayerAvatar = ({ name, className = "" }) => {
             if (!name) return null;
@@ -995,10 +1071,10 @@
                     </div>
                     
                     <div className="relative z-10 flex flex-col items-center w-full max-w-lg mx-auto">
-                         <div class="mb-10 text-center">
-                            <h1 class="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight">IMPOSTER</h1>
-                            <div class="subtle-shine-container inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                                <span class="text-white/60 text-[10px] font-bold tracking-[0.3em] uppercase">Trust No One • {roundedWordCount.toLocaleString()}+ Words</span>
+                         <div className="mb-10 text-center">
+                            <SeasonalTitle season={currentSeason} className="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight" />
+                            <div className="subtle-shine-container inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                                <span className="text-white/60 text-[10px] font-bold tracking-[0.3em] uppercase">Trust No One • {roundedWordCount.toLocaleString()}+ Words</span>
                             </div>
                         </div>
 
@@ -1382,8 +1458,8 @@
                     <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
                         <div className="max-w-lg mx-auto p-6 pt-28">
                             <div class="mb-10 text-center">
-								<h1 class="text-5xl font-display font-black text-white mb-2 drop-shadow-lg tracking-tight">Mission Lobby</h1>
-                                <p class="text-white/40 font-semibold tracking-wide">Waiting for agents to assemble.</p>
+                                <SeasonalTitle season={currentSeason} className="text-5xl font-display font-black text-white mb-2 drop-shadow-lg tracking-tight" />
+                                <p class="text-white/40 font-semibold tracking-wide">Mission Lobby • Waiting for agents</p>
 							</div>
                             
                             <section className="mb-6 glass-panel rounded-[2rem] p-6">
@@ -1762,7 +1838,7 @@
                             <img src="https://em-content.zobj.net/source/microsoft-teams/400/disguised-face_1f978.png" alt="Loading Icon" draggable="false" className="w-24 h-24 animate-float" />
                         </div>
                         
-                        <h1 className="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-4 drop-shadow-lg tracking-tight">IMPOSTER</h1>
+                        <SeasonalTitle season={currentSeason} className="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-4 drop-shadow-lg tracking-tight" />
                         <p className="text-white/50 font-semibold text-lg mb-12">Find the spy before time runs out.</p>
 
                         <div className="w-full h-24 flex flex-col items-center justify-center">
@@ -1843,7 +1919,7 @@
                         
                         <div className="flex flex-col items-center text-center mb-6">
                             <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${category === 'Supercell' ? 'bg-blue-500/20' : 'bg-brand-500/20'} ring-1 ring-white/10`}>
-                                <FaIcon name={icon} sizeClass="text-3xl" className={category === 'Supercell' ? '' : 'text-brand-400'} />
+                                <FaIcon name={icon} sizeClass="text-3xl" className={`${category === 'Supercell' ? '' : 'text-brand-400'} w-11 h-11`} />
                             </div>
                             <h2 className="text-2xl font-display font-bold text-white">{category}</h2>
                             <p className="text-white/40 text-xs font-bold tracking-widest uppercase mt-1">Category Info</p>
@@ -2186,7 +2262,7 @@
                         <div className="max-w-lg mx-auto p-6 pt-28">
                             {/* Header */}
                             <div class="mb-10 text-center">
-								<h1 class="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight">IMPOSTER</h1>
+                                <SeasonalTitle season={currentSeason} className="text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 mb-2 drop-shadow-lg tracking-tight" />
 								<div class="subtle-shine-container inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
 									<span class="text-white/60 text-[10px] font-bold tracking-[0.3em] uppercase">Local Game</span>
 								</div>
@@ -4055,7 +4131,7 @@
                     const playersRef = lobbyRef.collection('players');
                     currentLobbyPlayers.forEach(player => {
                         if (player.status) {
-                            const playerRef = playersRef.doc(player.id);
+							const playerRef = playersRef.doc(player.id);
                             batch.update(playerRef, { status: firebase.firestore.FieldValue.delete() });
                         }
                     });
