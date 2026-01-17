@@ -1635,92 +1635,92 @@
                                         </div>
                                     ) : (
                                         <div className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${!isHost && 'opacity-60'}`}>
-                                        {DISPLAY_CATEGORIES.map(cat => {
-                                            const iconSource = CATEGORY_ICONS[cat];
-                                            const isSelected = lobbyData.category === cat;
-                                            const isSupercell = cat === 'Supercell';
-                                            const isChristmas = cat === 'Christmas';
-                                            const isHalloween = cat === 'Halloween';
-                                            const isSeasonal = isChristmas || isHalloween;
-                                            
-                                            let cardClasses = `relative overflow-hidden flex flex-col items-center justify-center gap-3 p-4 rounded-[1.5rem] border transition-all duration-300 active:scale-95 group min-h-[110px] `;
-                                            let checkmarkBg = 'bg-teal-500 text-slate-900';
+											{DISPLAY_CATEGORIES.map(cat => {
+												const iconSource = CATEGORY_ICONS[cat];
+												const isSelected = lobbyData.category === cat;
+												const isSupercell = cat === 'Supercell';
+												const isChristmas = cat === 'Christmas';
+												const isHalloween = cat === 'Halloween';
+												const isSeasonal = isChristmas || isHalloween;
+												
+												let cardClasses = `relative overflow-hidden flex flex-col items-center justify-center gap-3 p-4 rounded-[1.5rem] border transition-all duration-300 active:scale-95 group min-h-[110px] `;
+												let checkmarkBg = 'bg-teal-500 text-slate-900';
 
-                                            if (isChristmas) {
-                                                if (isSelected) {
-                                                    cardClasses += 'border-red-400 bg-red-900/20 ring-red-500 shadow-lg shadow-red-900/40 text-white';
-                                                    checkmarkBg = 'bg-red-500 text-white';
-                                                } else {
-                                                    cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
-                                                }
-                                            } else if (isHalloween) {
-                                                if (isSelected) {
-                                                    cardClasses += 'border-orange-400 bg-orange-900/20 ring-orange-500 shadow-lg shadow-orange-900/40 text-white';
-                                                     checkmarkBg = 'bg-orange-500 text-white';
-                                                } else {
-                                                    cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
-                                                }
-                                            } else if (isSupercell) {
-                                                if (isSelected) {
-                                                    cardClasses += 'border-blue-400 bg-blue-900/20 ring-blue-500 shadow-lg shadow-blue-900/40 text-white';
-                                                    checkmarkBg = 'bg-blue-500 text-white';
-                                                } else {
-                                                    cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
-                                                }
-                                            } else {
-                                                if (isSelected) {
-                                                    cardClasses += 'glass-panel bg-teal-500/10 border-teal-500/40 text-teal-100 shadow-[0_0_20px_rgba(20,184,166,0.1)]';
-                                                } else {
-                                                    cardClasses += 'glass-panel-lighter border-white/5 text-slate-400 hover:bg-white/5 hover:border-white/10';
-                                                }
-                                            }
+												if (isChristmas) {
+													if (isSelected) {
+														cardClasses += 'border-red-400 bg-red-900/20 ring-red-500 shadow-lg shadow-red-900/40 text-white';
+														checkmarkBg = 'bg-red-500 text-white';
+													} else {
+														cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
+													}
+												} else if (isHalloween) {
+													if (isSelected) {
+														cardClasses += 'border-orange-400 bg-orange-900/20 ring-orange-500 shadow-lg shadow-orange-900/40 text-white';
+														 checkmarkBg = 'bg-orange-500 text-white';
+													} else {
+														cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
+													}
+												} else if (isSupercell) {
+													if (isSelected) {
+														cardClasses += 'border-blue-400 bg-blue-900/20 ring-blue-500 shadow-lg shadow-blue-900/40 text-white';
+														checkmarkBg = 'bg-blue-500 text-white';
+													} else {
+														cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
+													}
+												} else {
+													if (isSelected) {
+														cardClasses += 'glass-panel bg-teal-500/10 border-teal-500/40 text-teal-100 shadow-[0_0_20px_rgba(20,184,166,0.1)]';
+													} else {
+														cardClasses += 'glass-panel-lighter border-white/5 text-slate-400 hover:bg-white/5 hover:border-white/10';
+													}
+												}
 
-                                            return (
-                                                <button
-                                                    key={cat}
-                                                    onClick={() => handleCategorySelect(cat)}
-                                                    onMouseDown={() => handleCategoryTouchStart(cat)}
-                                                    onMouseUp={handleCategoryTouchEnd}
-                                                    onMouseLeave={handleCategoryTouchEnd}
-                                                    onTouchStart={() => handleCategoryTouchStart(cat)}
-                                                    onTouchEnd={handleCategoryTouchEnd}
-                                                    onTouchMove={handleCategoryTouchEnd}
-                                                    className={cardClasses}
-                                                >
-                                                    {isSupercell && (
-                                                        <div className="supercell-container pointer-events-none">
-                                                            <div className="supercell-bg-1"></div>
-                                                            <div className="supercell-bg-2"></div>
-                                                        </div>
-                                                    )}
-                                                    {isSeasonal && (
-                                                        <div 
-                                                            className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                                                            style={{
-                                                                backgroundImage: isChristmas 
-                                                                    ? `url("https://www.catholicnewsagency.com/images/three-kings.jpg?jpg")`
-                                                                    : `url("https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg")`
-                                                            }}
-                                                        ></div>
-                                                    )}
+												return (
+													<button
+														key={cat}
+														onClick={() => handleCategorySelect(cat)}
+														onMouseDown={() => handleCategoryTouchStart(cat)}
+														onMouseUp={handleCategoryTouchEnd}
+														onMouseLeave={handleCategoryTouchEnd}
+														onTouchStart={() => handleCategoryTouchStart(cat)}
+														onTouchEnd={handleCategoryTouchEnd}
+														onTouchMove={handleCategoryTouchEnd}
+														className={cardClasses}
+													>
+														{isSupercell && (
+															<div className="supercell-container pointer-events-none">
+																<div className="supercell-bg-1"></div>
+																<div className="supercell-bg-2"></div>
+															</div>
+														)}
+														{isSeasonal && (
+															<div 
+																className="absolute inset-0 bg-cover bg-center pointer-events-none"
+																style={{
+																	backgroundImage: isChristmas 
+																		? `url("https://www.catholicnewsagency.com/images/three-kings.jpg?jpg")`
+																		: `url("https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg")`
+																}}
+															></div>
+														)}
 
-                                                    <div className="relative z-10 flex flex-col items-center gap-2">
-                                                        <FaIcon 
-                                                            name={iconSource} 
-                                                            sizeClass="text-2xl" 
-                                                            className={`transition-all duration-300 ${isSupercell || isSeasonal ? "drop-shadow-md brightness-125" : (isSelected ? "text-teal-400 scale-110" : "text-white/40 group-hover:text-white/70")}`} 
-                                                        />
-                                                        <span className={`text-xs font-bold tracking-wide transition-colors ${isSupercell || isSeasonal ? 'text-white drop-shadow-md' : ''}`}>{cat}</span>
-                                                    </div>
+														<div className="relative z-10 flex flex-col items-center gap-2">
+															<FaIcon 
+																name={iconSource} 
+																sizeClass="text-2xl" 
+																className={`transition-all duration-300 ${isSupercell || isSeasonal ? "drop-shadow-md brightness-125" : (isSelected ? "text-teal-400 scale-110" : "text-white/40 group-hover:text-white/70")}`} 
+															/>
+															<span className={`text-xs font-bold tracking-wide transition-colors ${isSupercell || isSeasonal ? 'text-white drop-shadow-md' : ''}`}>{cat}</span>
+														</div>
 
-                                                    {isSelected && (
-                                                        <div className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-sm ${checkmarkBg}`}>
-                                                            <i className="fa-solid fa-check"></i>
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            )
-                                        })}
+														{isSelected && (
+															<div className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-sm ${checkmarkBg}`}>
+																<i className="fa-solid fa-check"></i>
+															</div>
+														)}
+													</button>
+												)
+											})}
                                         </div>
                                     )}
                                 </section>
@@ -2536,91 +2536,91 @@
                                 ) : (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fadeIn">
                                         {DISPLAY_CATEGORIES.map(cat => {
-                                            const iconSource = CATEGORY_ICONS[cat];
-                                            const isSelected = selectedCategory === cat;
-                                            const isSupercell = cat === 'Supercell';
-                                            const isChristmas = cat === 'Christmas';
-                                            const isHalloween = cat === 'Halloween';
-                                            const isSeasonal = isChristmas || isHalloween;
-                                            
-                                            let cardClasses = `relative overflow-hidden flex flex-col items-center justify-center gap-3 p-4 rounded-[1.5rem] border transition-all duration-300 active:scale-95 group min-h-[110px] `;
-                                            let checkmarkBg = 'bg-teal-500 text-slate-900';
+											const iconSource = CATEGORY_ICONS[cat];
+											const isSelected = selectedCategory === cat;
+											const isSupercell = cat === 'Supercell';
+											const isChristmas = cat === 'Christmas';
+											const isHalloween = cat === 'Halloween';
+											const isSeasonal = isChristmas || isHalloween;
+											
+											let cardClasses = `relative overflow-hidden flex flex-col items-center justify-center gap-3 p-4 rounded-[1.5rem] border transition-all duration-300 active:scale-95 group min-h-[110px] `;
+											let checkmarkBg = 'bg-teal-500 text-slate-900';
 
-                                            if (isChristmas) {
-                                                if (isSelected) {
-                                                    cardClasses += 'border-red-400 bg-red-900/20 ring-red-500 shadow-lg shadow-red-900/40 text-white';
-                                                    checkmarkBg = 'bg-red-500 text-white';
-                                                } else {
-                                                    cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
-                                                }
-                                            } else if (isHalloween) {
-                                                if (isSelected) {
-                                                    cardClasses += 'border-orange-400 bg-orange-900/20 ring-orange-500 shadow-lg shadow-orange-900/40 text-white';
-                                                     checkmarkBg = 'bg-orange-500 text-white';
-                                                } else {
-                                                    cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
-                                                }
-                                            } else if (isSupercell) {
-                                                if (isSelected) {
-                                                    cardClasses += 'border-blue-400 bg-blue-900/20 ring-blue-500 shadow-lg shadow-blue-900/40 text-white';
-                                                    checkmarkBg = 'bg-blue-500 text-white';
-                                                } else {
-                                                    cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
-                                                }
-                                            } else {
-                                                if (isSelected) {
-                                                    cardClasses += 'glass-panel bg-teal-500/10 border-teal-500/40 text-teal-100 shadow-[0_0_20px_rgba(20,184,166,0.1)]';
-                                                } else {
-                                                    cardClasses += 'glass-panel-lighter border-white/5 text-slate-400 hover:bg-white/5 hover:border-white/10';
-                                                }
-                                            }
+											if (isChristmas) {
+												if (isSelected) {
+													cardClasses += 'border-red-400 bg-red-900/20 ring-red-500 shadow-lg shadow-red-900/40 text-white';
+													checkmarkBg = 'bg-red-500 text-white';
+												} else {
+													cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
+												}
+											} else if (isHalloween) {
+												if (isSelected) {
+													cardClasses += 'border-orange-400 bg-orange-900/20 ring-orange-500 shadow-lg shadow-orange-900/40 text-white';
+													 checkmarkBg = 'bg-orange-500 text-white';
+												} else {
+													cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
+												}
+											} else if (isSupercell) {
+												if (isSelected) {
+													cardClasses += 'border-blue-400 bg-blue-900/20 ring-blue-500 shadow-lg shadow-blue-900/40 text-white';
+													checkmarkBg = 'bg-blue-500 text-white';
+												} else {
+													cardClasses += 'border-white/10 bg-slate-900/40 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 text-slate-300';
+												}
+											} else {
+												if (isSelected) {
+													cardClasses += 'glass-panel bg-teal-500/10 border-teal-500/40 text-teal-100 shadow-[0_0_20px_rgba(20,184,166,0.1)]';
+												} else {
+													cardClasses += 'glass-panel-lighter border-white/5 text-slate-400 hover:bg-white/5 hover:border-white/10';
+												}
+											}
 
-                                            return (
-                                                <button
-                                                    key={cat}
-                                                    onClick={() => handleCategorySelect(cat)}
-                                                    onMouseDown={() => handleCategoryTouchStart(cat)}
-                                                    onMouseUp={handleCategoryTouchEnd}
-                                                    onMouseLeave={handleCategoryTouchEnd}
-                                                    onTouchStart={() => handleCategoryTouchStart(cat)}
-                                                    onTouchEnd={handleCategoryTouchEnd}
-                                                    onTouchMove={handleCategoryTouchEnd}
-                                                    className={cardClasses}
-                                                >
-                                                    {isSupercell && (
-                                                        <div className="supercell-container pointer-events-none">
-                                                            <div className="supercell-bg-1"></div>
-                                                            <div className="supercell-bg-2"></div>
-                                                        </div>
-                                                    )}
-                                                    {isSeasonal && (
-                                                        <div 
-                                                            className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                                                            style={{
-                                                                backgroundImage: isChristmas 
-                                                                    ? `url("https://www.catholicnewsagency.com/images/three-kings.jpg?jpg")`
-                                                                    : `url("https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg")`
-                                                            }}
-                                                        ></div>
-                                                    )}
+											return (
+												<button
+													key={cat}
+													onClick={() => handleCategorySelect(cat)}
+													onMouseDown={() => handleCategoryTouchStart(cat)}
+													onMouseUp={handleCategoryTouchEnd}
+													onMouseLeave={handleCategoryTouchEnd}
+													onTouchStart={() => handleCategoryTouchStart(cat)}
+													onTouchEnd={handleCategoryTouchEnd}
+													onTouchMove={handleCategoryTouchEnd}
+													className={cardClasses}
+												>
+													{isSupercell && (
+														<div className="supercell-container pointer-events-none">
+															<div className="supercell-bg-1"></div>
+															<div className="supercell-bg-2"></div>
+														</div>
+													)}
+													{isSeasonal && (
+														<div 
+															className="absolute inset-0 bg-cover bg-center pointer-events-none"
+															style={{
+																backgroundImage: isChristmas 
+																	? `url("https://www.catholicnewsagency.com/images/three-kings.jpg?jpg")`
+																	: `url("https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg")`
+															}}
+														></div>
+													)}
 
-                                                    <div className="relative z-10 flex flex-col items-center gap-2">
-                                                        <FaIcon 
-                                                            name={iconSource} 
-                                                            sizeClass="text-2xl" 
-                                                            className={`transition-all duration-300 ${isSupercell || isSeasonal ? "drop-shadow-md brightness-125" : (isSelected ? "text-teal-400 scale-110" : "text-white/40 group-hover:text-white/70")}`} 
-                                                        />
-                                                        <span className={`text-xs font-bold tracking-wide transition-colors ${isSupercell || isSeasonal ? 'text-white drop-shadow-md' : ''}`}>{cat}</span>
-                                                    </div>
+													<div className="relative z-10 flex flex-col items-center gap-2">
+														<FaIcon 
+															name={iconSource} 
+															sizeClass="text-2xl" 
+															className={`transition-all duration-300 ${isSupercell || isSeasonal ? "drop-shadow-md brightness-125" : (isSelected ? "text-teal-400 scale-110" : "text-white/40 group-hover:text-white/70")}`} 
+														/>
+														<span className={`text-xs font-bold tracking-wide transition-colors ${isSupercell || isSeasonal ? 'text-white drop-shadow-md' : ''}`}>{cat}</span>
+													</div>
 
-                                                    {isSelected && (
-                                                        <div className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-sm ${checkmarkBg}`}>
-                                                            <i className="fa-solid fa-check"></i>
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            )
-                                        })}
+													{isSelected && (
+														<div className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-sm ${checkmarkBg}`}>
+															<i className="fa-solid fa-check"></i>
+														</div>
+													)}
+												</button>
+											)
+										})}
                                     </div>
                                 )}
                             </section>
