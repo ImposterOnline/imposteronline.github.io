@@ -2371,7 +2371,7 @@
                                         >
                                             <PlayerAvatar name={p.name} className="w-5 h-5 rounded-full" />
                                             {p.audioData && <i className="fa-solid fa-microphone text-brand-400/50 text-xs"></i>}
-                                            <span className="text-xs font-bold text-slate-300 pr-1">{p.name}</span>
+                                            <span className="truncate max-w-28 text-xs font-bold text-slate-300 pr-1">{p.name}</span>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); removePlayer(i); }}
                                                 disabled={players.length <= MIN_PLAYERS}
@@ -2413,9 +2413,9 @@
                                 <div className="h-px bg-white/10"></div>
 
                                 <div 
-                                    className={`flex items-center justify-between transition-opacity duration-300 ${(players.length < 10 || isFakeWordMode) ? 'opacity-50' : ''}`}
-                                    title={isFakeWordMode ? "Disabled in Fake Word Mode" : (players.length < 10 ? "Requires 10 or more players" : "Add a second spy to the mission")}
-                                >
+									className={`flex items-center justify-between transition-opacity duration-300 ${players.length < 10 ? 'opacity-50' : ''}`}
+									title={players.length < 10 ? "Requires 10 or more players" : (isFakeWordMode ? "Add a second fake word card" : "Add a second spy to the mission")}
+								>
                                     <div className="pr-4">
                                         <h3 className="font-bold text-white/90 text-base flex items-center gap-3">
                                             <i className="fa-solid fa-user-secret text-orange-400/80 w-5 text-center"></i>
@@ -2424,16 +2424,16 @@
                                         <p className="text-white/40 text-xs mt-1 pl-8">Adds a second rogue agent when 10 or more players are in the lobby.</p>
                                     </div>
                                     <button 
-                                        onClick={() => {
-                                            if (players.length >= 10 && !isFakeWordMode) {
-                                                setEnableTwoImposters(!enableTwoImposters);
-                                                audioManager.playSound(!enableTwoImposters ? 'switchOn' : 'switchOff');
-                                                if(navigator.vibrate) navigator.vibrate(10);
-                                            }
-                                        }}
-                                        disabled={players.length < 10 || isFakeWordMode}
-                                        className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${enableTwoImposters ? 'bg-orange-500/80' : 'bg-white/10'} ${(players.length < 10 || isFakeWordMode) ? 'cursor-not-allowed' : ''}`}
-                                    >
+										onClick={() => {
+											if (players.length >= 10) {
+												setEnableTwoImposters(!enableTwoImposters);
+												audioManager.playSound(!enableTwoImposters ? 'switchOn' : 'switchOff');
+												if(navigator.vibrate) navigator.vibrate(10);
+											}
+										}}
+										disabled={players.length < 10}
+										className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${enableTwoImposters ? 'bg-orange-500/80' : 'bg-white/10'} ${players.length < 10 ? 'cursor-not-allowed' : ''}`}
+									>
                                         <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enableTwoImposters ? 'translate-x-5' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
