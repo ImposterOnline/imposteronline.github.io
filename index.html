@@ -1312,7 +1312,7 @@
         };
 
         // NEW: Waiting Room Screen (Restyled & Feature-Rich)
-        const WaitingRoom = ({ lobbyData, lobbyPlayers, user, lobbyId, onStartGame, onStartMission, onLeaveLobby, audioManager, onConfusionVote }) => {
+        const WaitingRoom = ({ lobbyData, lobbyPlayers, user, lobbyId, onStartGame, onStartMission, onLeaveLobby, audioManager, onConfusionVote, season }) => {
             const isHost = user.uid === lobbyData.hostId;
             const MIN_PLAYERS = 3;
             const [showCopied, setShowCopied] = useState(false);
@@ -1412,10 +1412,23 @@
                 const inviteLink = `${window.location.origin}${window.location.pathname}?lobbyId=${lobbyId}&password=${lobbyData.password}`;
                 audioManager.playSound('uiClick');
 
+                // --- START: Holiday Share Text Logic ---
+                let shareTitle = 'Imposter Game Invite';
+                let shareText = `Join my Imposter game! Lobby ID: ${lobbyId}`;
+
+                if (season === 'christmas') {
+					shareTitle = '🎁 Festive Imposter Invite';
+					shareText = `The North Pole has a traitor! 🎅🏻\n\nJoin my game and help us find the Grinch before he steals the presents.\n\n📍 Lobby ID: ${lobbyId}`;
+				} else if (season === 'halloween') {
+					shareTitle = '🎃 Spooky Imposter Invite';
+					shareText = `Something is lurking in the shadows... 👻\n\nCan you find the ghost before it's too late?\n\n📍 Lobby ID: ${lobbyId}`;
+				}
+                // --- END: Holiday Share Text Logic ---
+
                 if (navigator.share) {
                     navigator.share({
-                        title: 'Imposter Game Invite',
-                        text: `Join my Imposter game! Lobby ID: ${lobbyId}`,
+                        title: shareTitle,
+                        text: shareText,
                         url: inviteLink,
                     })
                     .catch((error) => console.log('Error sharing:', error));
@@ -4277,7 +4290,7 @@
                     const onlineState = lobbyData.gameState;
                     
                     if (onlineState === 'waiting' || (onlineState === 'reveal' && meAsPlayer?.hasSeenCard)) {
-                         return <WaitingRoom lobbyData={lobbyData} lobbyPlayers={lobbyPlayers} user={user} lobbyId={lobbyId} onStartGame={handleStartGameOnline} onStartMission={handleStartMissionOnline} onLeaveLobby={() => isHost ? handleBackToHome() : setShowExitConfirmModal(true)} audioManager={audioManagerRef.current} onConfusionVote={handleConfusionVote} />;
+                         return <WaitingRoom lobbyData={lobbyData} lobbyPlayers={lobbyPlayers} user={user} lobbyId={lobbyId} onStartGame={handleStartGameOnline} onStartMission={handleStartMissionOnline} onLeaveLobby={() => isHost ? handleBackToHome() : setShowExitConfirmModal(true)} audioManager={audioManagerRef.current} onConfusionVote={handleConfusionVote} season={currentSeason} />;
                     }
                     if (onlineState === 'reveal' && !meAsPlayer?.hasSeenCard) {
                         const isFakeWordPlayerOnline = lobbyData.isFakeWordMode && lobbyData.fakeWordPlayerIds?.includes(user.uid);
