@@ -807,31 +807,19 @@
 			const [fakeWordAnimDir, setFakeWordAnimDir] = React.useState('next');
 
 			const nextImposterScenario = () => {
-                if (currentImposterScenario < scenarios.imposter.length - 1) {
-                    setImposterAnimDir('next');
-				    setCurrentImposterScenario((prev) => prev + 1);
-                }
+                setCurrentImposterScenario((prev) => Math.min(prev + 1, scenarios.imposter.length - 1));
 			};
 
 			const prevImposterScenario = () => {
-                if (currentImposterScenario > 0) {
-                    setImposterAnimDir('prev');
-				    setCurrentImposterScenario((prev) => prev - 1);
-                }
+                setCurrentImposterScenario((prev) => Math.max(prev - 1, 0));
 			};
 
 			const nextFakeWordScenario = () => {
-                if (currentFakeWordScenario < scenarios.fakeWord.length - 1) {
-                    setFakeWordAnimDir('next');
-				    setCurrentFakeWordScenario((prev) => prev + 1);
-                }
+                setCurrentFakeWordScenario((prev) => Math.min(prev + 1, scenarios.fakeWord.length - 1));
 			};
 
 			const prevFakeWordScenario = () => {
-                if (currentFakeWordScenario > 0) {
-                    setFakeWordAnimDir('prev');
-				    setCurrentFakeWordScenario((prev) => prev - 1);
-                }
+                setCurrentFakeWordScenario((prev) => Math.max(prev - 1, 0));
 			};
 			
 			const useSwipe = (onSwipeLeft, onSwipeRight) => {
@@ -936,30 +924,44 @@
 									<img src="https://em-content.zobj.net/source/microsoft-teams/363/eyes_1f440.png" alt="Imposter Icon" className="w-7 h-7 -mt-1" />
 									Deception Deep Dive: Imposter Mode
 								</h3>
+								<div>
                                 <div className="flex items-center justify-center gap-2">
-									<button onClick={prevImposterScenario} disabled={currentImposterScenario === 0} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
-										<i className="fa-solid fa-chevron-left"></i>
-									</button>
-                                    <div className="flex-1 bg-white/5 rounded-xl border border-white/10 relative overflow-hidden h-[260px]" {...imposterSwipeHandlers}>
-                                        <div key={currentImposterScenario} className={`absolute inset-0 ${imposterAnimDir === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}>
-                                            <div className="p-4 h-full overflow-y-auto no-scrollbar">
-                                                <h4 className="font-bold text-base text-white/90 mb-2">{scenarios.imposter[currentImposterScenario].title}</h4>
-                                                <div className="text-sm space-y-2 pl-2">
-                                                    <p>• <strong>Agents' Word:</strong> <span className="text-teal-300">{scenarios.imposter[currentImposterScenario].agentWord}</span> | <strong>Imposter's Word:</strong> <span className="text-red-300">{scenarios.imposter[currentImposterScenario].imposterWord}</span></p>
-                                                    <hr className="border-white/10 my-2" />
-                                                    {scenarios.imposter[currentImposterScenario].clues.map((clue, index) => (
-                                                        <p key={index}>• <strong>{clue.player}:</strong> "{clue.clue}"</p>
-                                                    ))}
-                                                </div>
-                                                <p className="mt-3 text-xs text-white/60">
-                                                    {scenarios.imposter[currentImposterScenario].explanation}
-                                                </p>
-                                            </div>
+										<button onClick={prevImposterScenario} disabled={currentImposterScenario === 0} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
+											<i className="fa-solid fa-chevron-left"></i>
+										</button>
+										<div className="flex-1 bg-white/5 rounded-xl border border-white/10 relative overflow-hidden h-[260px]" {...imposterSwipeHandlers}>
+											<div className="flex h-full transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentImposterScenario * 100}%)` }}>
+												{scenarios.imposter.map((scenario, index) => (
+													<div key={index} className="w-full h-full flex-shrink-0 p-4 overflow-y-auto no-scrollbar">
+														<h4 className="font-bold text-base text-white/90 mb-2">{scenario.title}</h4>
+														<div className="text-sm space-y-2 pl-2">
+															<p>• <strong>Agents' Word:</strong> <span className="text-teal-300">{scenario.agentWord}</span> | <strong>Imposter's Word:</strong> <span className="text-red-300">{scenario.imposterWord}</span></p>
+															<hr className="border-white/10 my-2" />
+															{scenario.clues.map((clue, clueIndex) => (
+																<p key={clueIndex}>• <strong>{clue.player}:</strong> "{clue.clue}"</p>
+															))}
+														</div>
+														<p className="mt-3 text-xs text-white/60">
+															{scenario.explanation}
+														</p>
+													</div>
+												))}
+											</div>
 										</div>
+										<button onClick={nextImposterScenario} disabled={currentImposterScenario === scenarios.imposter.length - 1} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
+											<i className="fa-solid fa-chevron-right"></i>
+										</button>
 									</div>
-									<button onClick={nextImposterScenario} disabled={currentImposterScenario === scenarios.imposter.length - 1} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
-										<i className="fa-solid fa-chevron-right"></i>
-									</button>
+									<div className="flex justify-center items-center gap-2 mt-3">
+										{scenarios.imposter.map((_, index) => (
+											<button
+												key={index}
+												onClick={() => setCurrentImposterScenario(index)}
+												className={`h-2 rounded-full transition-all duration-300 ${index === currentImposterScenario ? 'w-4 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`}
+												aria-label={`Go to imposter scenario ${index + 1}`}
+											/>
+										))}
+									</div>
 								</div>
 							</section>
 
@@ -969,30 +971,44 @@
 									<img src="https://images.emojiterra.com/microsoft/fluent-emoji/15.1/3d/1f3ad_3d.png" alt="Fake Word Icon" className="w-7 h-7" />
 									Deception Deep Dive: Fake Word Mode
 								</h3>
+								<div>
 								<div className="flex items-center justify-center gap-2">
-									<button onClick={prevFakeWordScenario} disabled={currentFakeWordScenario === 0} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
-										<i className="fa-solid fa-chevron-left"></i>
-									</button>
-									<div className="flex-1 bg-white/5 rounded-xl border border-white/10 relative overflow-hidden h-[260px]" {...fakeWordSwipeHandlers}>
-                                        <div key={currentFakeWordScenario} className={`absolute inset-0 ${fakeWordAnimDir === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}>
-                                            <div className="p-4 h-full overflow-y-auto no-scrollbar">
-                                                <h4 className="font-bold text-base text-white/90 mb-2">{scenarios.fakeWord[currentFakeWordScenario].title}</h4>
-                                                <div className="text-sm space-y-2 pl-2">
-                                                    <p>• <strong>Agents' Word:</strong> <span className="text-teal-300">{scenarios.fakeWord[currentFakeWordScenario].agentWord}</span> | <strong>{scenarios.fakeWord[currentFakeWordScenario].fakeWordPlayer}'s Word:</strong> <span className="text-yellow-300">{scenarios.fakeWord[currentFakeWordScenario].fakeWord}</span></p>
-                                                    <hr className="border-white/10 my-2" />
-                                                    {scenarios.fakeWord[currentFakeWordScenario].clues.map((clue, index) => (
-                                                        <p key={index}>• <strong>{clue.player}:</strong> "{clue.clue}"</p>
-                                                    ))}
-                                                </div>
-                                                <p className="mt-3 text-xs text-white/60">
-                                                    {scenarios.fakeWord[currentFakeWordScenario].explanation}
-                                                </p>
-                                            </div>
+										<button onClick={prevFakeWordScenario} disabled={currentFakeWordScenario === 0} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
+											<i className="fa-solid fa-chevron-left"></i>
+										</button>
+										<div className="flex-1 bg-white/5 rounded-xl border border-white/10 relative overflow-hidden h-[260px]" {...fakeWordSwipeHandlers}>
+											<div className="flex h-full transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentFakeWordScenario * 100}%)` }}>
+												{scenarios.fakeWord.map((scenario, index) => (
+													<div key={index} className="w-full h-full flex-shrink-0 p-4 overflow-y-auto no-scrollbar">
+														<h4 className="font-bold text-base text-white/90 mb-2">{scenario.title}</h4>
+														<div className="text-sm space-y-2 pl-2">
+															<p>• <strong>Agents' Word:</strong> <span className="text-teal-300">{scenario.agentWord}</span> | <strong>{scenario.fakeWordPlayer}'s Word:</strong> <span className="text-yellow-300">{scenario.fakeWord}</span></p>
+															<hr className="border-white/10 my-2" />
+															{scenario.clues.map((clue, clueIndex) => (
+																<p key={clueIndex}>• <strong>{clue.player}:</strong> "{clue.clue}"</p>
+															))}
+														</div>
+														<p className="mt-3 text-xs text-white/60">
+															{scenario.explanation}
+														</p>
+													</div>
+												))}
+											</div>
 										</div>
+										<button onClick={nextFakeWordScenario} disabled={currentFakeWordScenario === scenarios.fakeWord.length - 1} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
+											<i className="fa-solid fa-chevron-right"></i>
+										</button>
 									</div>
-									<button onClick={nextFakeWordScenario} disabled={currentFakeWordScenario === scenarios.fakeWord.length - 1} className="hidden md:flex flex-shrink-0 w-8 h-8 items-center justify-center bg-white/10 rounded-full text-white/50 hover:bg-white/20 active:scale-90 transition disabled:opacity-30 disabled:cursor-not-allowed">
-										<i className="fa-solid fa-chevron-right"></i>
-									</button>
+									<div className="flex justify-center items-center gap-2 mt-3">
+										{scenarios.fakeWord.map((_, index) => (
+											<button
+												key={index}
+												onClick={() => setCurrentFakeWordScenario(index)}
+												className={`h-2 rounded-full transition-all duration-300 ${index === currentFakeWordScenario ? 'w-4 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`}
+												aria-label={`Go to fake word scenario ${index + 1}`}
+											/>
+										))}
+									</div>
 								</div>
 							</section>
 
