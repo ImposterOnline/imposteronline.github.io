@@ -1344,7 +1344,7 @@
 			const logoUrl = getLogoUrl();
 
 			return (
-				<div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+				<div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
 					<div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose}></div>
 					<div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up transform transition-all">
 						<button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/5 rounded-full text-white/50 hover:bg-white/10 active:scale-90 transition">
@@ -1559,13 +1559,13 @@
 									</div>
 								</div>
 								<div className="flex items-center gap-4 mt-4">
-									<button onClick={() => { setShowQRCode(true); audioManager.playSound('uiClick'); }} className="relative flex-1 h-14 bg-white/10 rounded-xl flex items-center justify-center gap-3 text-brand-400 hover:bg-brand-500/20 active:scale-95 transition font-bold text-sm">
+									<button onClick={() => { setShowQRCode(true); audioManager.playSound('uiClick'); }} className="relative flex-1 h-14 bg-white/10 rounded-xl flex items-center justify-center sm:gap-3 text-brand-400 hover:bg-brand-500/20 active:scale-95 transition font-bold text-sm">
 										<i className="fa-solid fa-qrcode text-xl"></i>
-										<span>SCAN QR</span>
+										<span className="hidden sm:inline">SCAN QR</span>
 									</button>
-									<button onClick={handleCopyInvite} className="relative flex-1 h-14 bg-white/10 rounded-xl flex items-center justify-center gap-3 text-brand-400 hover:bg-brand-500/20 active:scale-95 transition font-bold text-sm">
+									<button onClick={handleCopyInvite} className="relative flex-1 h-14 bg-white/10 rounded-xl flex items-center justify-center sm:gap-3 text-brand-400 hover:bg-brand-500/20 active:scale-95 transition font-bold text-sm">
 										<i className={`fa-solid ${showCopied ? 'fa-check' : 'fa-share-nodes'} text-lg`}></i>
-										<span>{showCopied ? 'COPIED!' : 'SHARE LINK'}</span>
+										<span className="hidden sm:inline">{showCopied ? 'COPIED!' : 'SHARE LINK'}</span>
 									</button>
 								</div>
 							</section>
@@ -2031,7 +2031,7 @@
             const icon = CATEGORY_ICONS[category];
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose}></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up transform transition-all">
                         <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/5 rounded-full text-white/50 hover:bg-white/10">
