@@ -1487,14 +1487,18 @@
                 let shareText = `Join my Imposter game! Lobby ID: ${lobbyId}`;
 
                 if (season === 'christmas') {
-					shareTitle = '🎁 Festive Imposter Invite';
-					shareText = `The North Pole has a traitor! 🎅🏻\n\nJoin my game and help us find the Grinch before he steals the presents.\n\n📍 Lobby ID: ${lobbyId}`;
-				} else if (season === 'halloween') {
-					shareTitle = '🎃 Spooky Imposter Invite';
-					shareText = `Something is lurking in the shadows... 👻\n\nCan you find the ghost before it's too late?\n\n📍 Lobby ID: ${lobbyId}`;
-				}
+                    shareTitle = '🎁 Festive Imposter Invite';
+                    shareText = `The North Pole has a traitor! 🎅🏻\n\nJoin my game and help us find the Grinch before he steals the presents.\n\n📍 Lobby ID: ${lobbyId}`;
+                } else if (season === 'halloween') {
+                    shareTitle = '🎃 Spooky Imposter Invite';
+                    shareText = `Something is lurking in the shadows... 👻\n\nCan you find the ghost before it's too late?\n\n📍 Lobby ID: ${lobbyId}`;
+                }
                 // --- END: Holiday Share Text Logic ---
 
+                // This checks if the browser supports the modern "Web Share API".
+                // This API is what opens the native sharing pop-up on supported devices 
+                // (like mobile browsers and some desktop browsers like Chrome).
+                // It requires a secure (HTTPS) connection to work.
                 if (navigator.share) {
                     navigator.share({
                         title: shareTitle,
@@ -1503,6 +1507,9 @@
                     })
                     .catch((error) => console.log('Error sharing:', error));
                 } else {
+                    // This is the fallback for browsers that DO NOT support the Web Share API.
+                    // It copies the link to the clipboard, which is why you see the "COPIED!" message.
+                    // This ensures that users on any browser can still share the link.
                     navigator.clipboard.writeText(inviteLink).then(() => {
                         setShowCopied(true);
                         setTimeout(() => setShowCopied(false), 2000);
