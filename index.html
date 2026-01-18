@@ -1253,7 +1253,7 @@
         // NEW: Modal for Confusion Poll
         const ConfusionPollModal = ({ onVote }) => {
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/70 backdrop-blur-md"></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl animate-slide-up text-center">
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-yellow-500/20 ring-1 ring-white/10 mx-auto">
@@ -1283,7 +1283,7 @@
         // NEW: Imposter Notification Modal
         const ImposterVoteNotificationModal = ({ onClose }) => {
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl animate-slide-up text-center">
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-red-500/20 ring-1 ring-white/10 mx-auto">
@@ -1305,7 +1305,7 @@
         // NEW: Restart Notification Modal
         const RestartNotificationModal = ({ word, onClose }) => {
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl animate-slide-up text-center">
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-sky-500/20 ring-1 ring-white/10 mx-auto">
@@ -2077,7 +2077,7 @@
         // NEW: Modal for removed players
         const RemovedModal = ({ onClose }) => {
 			return (
-				<div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+				<div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up text-center">
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-red-500/20 ring-1 ring-white/10 mx-auto">
@@ -2100,7 +2100,7 @@
         // NEW: Modal for when host closes lobby
         const LobbyClosedModal = ({ hostName, onClose }) => {
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up text-center">
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-yellow-500/20 ring-1 ring-white/10 mx-auto">
@@ -2125,7 +2125,7 @@
             if (!players || players.length === 0) return null;
             
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up flex flex-col max-h-[80vh]">
                         <h2 className="flex-shrink-0 text-xl font-display font-bold text-white mb-6 text-center flex items-center justify-center gap-3">
@@ -2155,7 +2155,7 @@
         // NEW: Modal to confirm leaving a lobby
         const ExitLobbyConfirmModal = ({ onConfirm, onCancel }) => {
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fadeIn">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-fadeIn">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
                     <div className="relative w-full max-w-sm glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-slide-up text-center">
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-yellow-500/20 ring-1 ring-white/10 mx-auto">
