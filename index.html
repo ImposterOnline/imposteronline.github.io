@@ -1478,7 +1478,7 @@
                 }
             };
 
-            const handleCopyInvite = () => {
+            const handleCopyInvite = async () => {
                 const inviteLink = `${window.location.origin}${window.location.pathname}?lobbyId=${lobbyId}&password=${lobbyData.password}`;
                 audioManager.playSound('uiClick');
 
@@ -1495,25 +1495,29 @@
                 }
                 // --- END: Holiday Share Text Logic ---
 
-                // This checks if the browser supports the modern "Web Share API".
-                // This API is what opens the native sharing pop-up on supported devices 
-                // (like mobile browsers and some desktop browsers like Chrome).
-                // It requires a secure (HTTPS) connection to work.
+                // Define share data
+                const shareData = {
+                    title: shareTitle,
+                    text: shareText,
+                    url: inviteLink
+                };
+
+                // Check if browser supports sharing (Must be HTTPS)
                 if (navigator.share) {
-                    navigator.share({
-                        title: shareTitle,
-                        text: shareText,
-                        url: inviteLink,
-                    })
-                    .catch((error) => console.log('Error sharing:', error));
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err) {
+                        console.log('Share failed or canceled:', err);
+                        // Note: We do NOT fallback to clipboard here intentionally, 
+                        // because if the user manually cancels the share menu, 
+                        // we don't want to annoy them with a "Copied" popup.
+                    }
                 } else {
-                    // This is the fallback for browsers that DO NOT support the Web Share API.
-                    // It copies the link to the clipboard, which is why you see the "COPIED!" message.
-                    // This ensures that users on any browser can still share the link.
+                    // Fallback for browsers/contexts that don't support sharing (like HTTP local testing)
                     navigator.clipboard.writeText(inviteLink).then(() => {
                         setShowCopied(true);
                         setTimeout(() => setShowCopied(false), 2000);
-                    });
+                    }).catch(err => console.error("Clipboard failed", err));
                 }
             };
 
