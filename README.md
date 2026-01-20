@@ -1,5 +1,7 @@
 # Imposter • Find the Spy - Full Documentation
 
+**AUTHOR/DEVELOPER/CREATOR: [Jandré du Preez/Fillabrona](https://fillabrona.github.io)**
+
 > **Source Code Reference:**
 > For exact implementation details, CSS animations, or specific React state logic, please refer to the raw source code file here:
 > [📂 View ImposterGame.html Source Code](https://github.com/ImposterOnline/imposteronline.github.io/blob/main/index.html)
