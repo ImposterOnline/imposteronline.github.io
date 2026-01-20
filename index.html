@@ -3459,6 +3459,20 @@
         };
         
         // --- HELPER FUNCTIONS ---
+        // Fisher-Yates Shuffle - Unbiased randomization
+        const shuffleArray = (array) => {
+            let currentIndex = array.length, randomIndex;
+            // While there remain elements to shuffle.
+            while (currentIndex > 0) {
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        };
+
         const generateRandomString = (length, chars) => {
             let result = '';
             for (let i = 0; i < length; i++) {
@@ -3977,7 +3991,9 @@
 
             // --- LOCAL GAME HANDLERS ---
             const startLocalGame = (players, selectedCategories, duration, isRandomMode, speakCategory, enableTwoImposters, isFakeWordMode) => {
-                const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
+                // Use proper shuffle
+                const shuffledPlayers = shuffleArray([...players]);
+                
                 const useRandom = isRandomMode || (selectedCategories && selectedCategories.length === 0);
                 let finalCategory;
                 if (useRandom) {
@@ -3991,9 +4007,11 @@
                 const secretWord = words[Math.floor(Math.random() * words.length)];
                 
                 const numRoguePlayers = enableTwoImposters && shuffledPlayers.length >= 10 ? 2 : 1;
+                
+                // Use proper shuffle for indices
                 const playerIndices = Array.from(Array(shuffledPlayers.length).keys());
-                playerIndices.sort(() => Math.random() - 0.5);
-                const roguePlayerIndices = playerIndices.slice(0, numRoguePlayers);
+                const shuffledIndices = shuffleArray([...playerIndices]);
+                const roguePlayerIndices = shuffledIndices.slice(0, numRoguePlayers);
 
                 let fakeWord = '';
                 if(isFakeWordMode) {
@@ -4164,13 +4182,20 @@
                 let wordPool = availableWords.length > 0 ? availableWords : wordsForCategory;
                 const secretWord = wordPool[Math.floor(Math.random() * wordPool.length)];
                 
-                const shuffledPlayers = [...lobbyPlayers].sort(() => Math.random() - 0.5);
+                // 1. Determine Turn Order (Shuffle the lobby players)
+                const turnOrderList = shuffleArray([...lobbyPlayers]);
+                
+                // 2. Determine Imposters/FakeWordPlayers INDEPENDENTLY from turn order
+                // We create a pool of player IDs from the turn order, shuffle THAT, and pick the top N.
                 const numRoguePlayers = lobbyData.enableTwoImposters && lobbyPlayers.length >= 10 ? 2 : 1;
-                const roguePlayerIds = shuffledPlayers.slice(0, numRoguePlayers).map(p => p.id);
+                
+                const allPlayerIds = turnOrderList.map(p => p.id);
+                const shuffledPlayerIds = shuffleArray([...allPlayerIds]);
+                const roguePlayerIds = shuffledPlayerIds.slice(0, numRoguePlayers);
 
                 let updatePayload = {
                     secretWord,
-                    turnOrder: shuffledPlayers.map(p => ({name: p.name, id: p.id})),
+                    turnOrder: turnOrderList.map(p => ({name: p.name, id: p.id})),
                     category: finalCategory,
                     gameState: 'reveal',
                     usedWords: firebase.firestore.FieldValue.arrayUnion(secretWord),
