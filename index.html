@@ -2878,12 +2878,13 @@
         };
 
         // 2. Card Reveal Screen (Enhanced with 3D Flip)
-        const CardRevealScreen = ({ player, word, onNext, isLastPlayer, audioManager, onAcknowledge, isOnline, onConfused, isAiHintEnabled }) => {
+        const CardRevealScreen = ({ player, word, category, onNext, isLastPlayer, audioManager, onAcknowledge, isOnline, onConfused, isAiHintEnabled, initialAiHint }) => {
             const [step, setStep] = useState(isOnline ? 'reveal' : 'handover'); 
             const [isFlipped, setIsFlipped] = useState(false);
-            const [aiHint, setAiHint] = useState(null);
-            const [isHintLoading, setIsHintLoading] = useState(false);
             
+            // Use the hint passed from parent (Local) or DB (Online) directly
+            const aiHint = initialAiHint;
+
             useEffect(() => {
                 if(!isOnline) {
                     setStep('handover');
@@ -2899,17 +2900,6 @@
                     audio.play().catch(e => console.error("Custom audio playback failed:", e));
                 }
             }, [player, step]);
-
-            useEffect(() => {
-                // Conditions to fetch a hint
-                if (isFlipped && isAiHintEnabled && word !== "IMPOSTER" && !aiHint) {
-                    setIsHintLoading(true);
-                    fetchAiHint(word).then(hintText => {
-                        setAiHint(hintText);
-                        setIsHintLoading(false);
-                    });
-                }
-            }, [isFlipped, isAiHintEnabled, word, aiHint]);
 
             const handleReveal = () => {
                 if (!isFlipped) {
@@ -3018,17 +3008,13 @@
                                         )}
                                     </div>
                                     
-                                    {isAiHintEnabled && word !== "IMPOSTER" && (
-                                        <div className="relative z-10 w-full mt-auto mb-2 animate-fadeIn" style={{ animationDelay: '300ms' }}>
+                                    {isAiHintEnabled && word !== "IMPOSTER" && aiHint && (
+                                        <div className="relative z-10 w-full mt-auto mb-2 mt-8 animate-fadeIn" style={{ animationDelay: '300ms' }}>
                                             <div className="px-4 py-3 bg-slate-950/50 rounded-xl border border-white/10">
                                                 <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5">
                                                     <i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
                                                 </h4>
-                                                {isHintLoading ? (
-                                                    <p className="text-white/50 text-xs font-medium animate-pulse">Generating hint...</p>
-                                                ) : (
-                                                    <p className="text-white/80 text-xs font-medium leading-snug">{aiHint}</p>
-                                                )}
+                                                <p className="text-white/80 text-xs font-medium leading-snug">{aiHint}</p>
                                                 <p className="text-white/30 text-[9px] mt-2">Disclaimer: AI response may not be accurate.</p>
                                             </div>
                                         </div>
@@ -3653,7 +3639,7 @@
         const generateLobbyId = () => generateRandomString(6, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
         const generateLobbyPassword = () => generateRandomString(4, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
 
-        const fetchAiHint = async (word) => {
+        const fetchAiHint = async (word, category) => {
             const API_KEY = "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";
             const API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -3663,17 +3649,13 @@
         2.  The hint should help players understand the category or nature of the word without giving it away.
         3.  Be concise and clear. Aim for 3-10 words.
         4.  Do not add any conversational text or preamble. Just provide the hint.
-        5.  If the word is a person, state their primary profession or achievement.
-        6.  If the word is a place, describe its main feature or location.
-        7.  If the word is an object, describe what it's used for.
-        8.  If the word is a concept, give a simple definition.
+        5.  **CONTEXT IS KEY:** Use the provided 'Category' to determine the specific definition. For example, if Category is 'Supercell' and Word is 'Wizard', describe the Clash of Clans troop (e.g., "A magical troop that shoots fireballs"), NOT a generic fantasy wizard.
 
         Examples:
-        - Word: "All I Want for Christmas Is You" -> Hint: A popular Christmas song by Mariah Carey.
-        - Word: "Kauaʻi ʻōʻō" -> Hint: An extinct species of Hawaiian honeyeater.
-        - Word: "Eiffel Tower" -> Hint: A famous landmark located in Paris, France.
-        - Word: "Photosynthesis" -> Hint: The process plants use to convert light into energy.
-        - Word: "Shrek" -> Hint: An animated movie about a green ogre.`;
+        - Category: "Music", Word: "All I Want for Christmas Is You" -> Hint: A popular Christmas song by Mariah Carey.
+        - Category: "Places", Word: "Eiffel Tower" -> Hint: A famous landmark located in Paris, France.
+        - Category: "Supercell", Word: "Wizard" -> Hint: A ranged troop that shoots destructive fireballs.
+        - Category: "Mythology", Word: "Wizard" -> Hint: A person who practices magic and sorcery.`;
 
             try {
                 const response = await fetch(API_URL, {
@@ -3686,7 +3668,7 @@
                         model: "llama-3.3-70b-versatile",
                         messages: [
                             { role: "system", content: systemPrompt },
-                            { role: "user", content: `Word: "${word}"` }
+                            { role: "user", content: `Category: "${category}"\nWord: "${word}"` }
                         ],
                         temperature: 0.4,
                         max_tokens: 60,
@@ -4290,12 +4272,21 @@
                     fakeWord,
                     isFakeWordMode,
                     isAiHintEnabled,
+                    aiHint: null, // Initialize aiHint
                     duration,
                     firstPlayer: shuffledPlayers[0].name,
                     category: finalCategory,
                     speakCategory,
                     turnOrder: shuffledPlayers.map((p, i) => ({ name: p.name, id: `local_${i}` }))
                 });
+
+                // PRE-LOAD AI HINT
+                if (isAiHintEnabled) {
+                    fetchAiHint(secretWord, finalCategory).then(hint => {
+                        setLocalGameData(prev => ({ ...prev, aiHint: hint }));
+                    });
+                }
+
                 setLocalCurrentPlayerIndex(0);
                 setLocalGameState('pass');
             };
@@ -4433,6 +4424,7 @@
             
              const handleStartGameOnline = async () => {
                 if (lobbyPlayers.length < 3) return;
+                if (audioManagerRef.current) audioManagerRef.current.playSound('uiClick'); // Feedback immediate
                 
                 // --- ONLINE CRASH FIX START ---
                 let finalCategory = lobbyData.category;
@@ -4489,6 +4481,12 @@
                 } else {
                     updatePayload.imposterIds = roguePlayerIds;
                     updatePayload.fakeWordPlayerIds = []; // Clear fakeWordPlayerIds
+                }
+
+                // Generate AI Hint once for everyone if enabled
+                if (lobbyData.isAiHintEnabled) {
+                    const generatedHint = await fetchAiHint(secretWord, finalCategory);
+                    updatePayload.aiHint = generatedHint;
                 }
                 
                 await db.collection('lobbies').doc(lobbyId).update(updatePayload);
@@ -4691,7 +4689,18 @@
                             const isFakeWordPlayer = localGameData.isFakeWordMode && localGameData.fakeWordPlayerIndices.includes(localCurrentPlayerIndex);
                             const isImposter = !localGameData.isFakeWordMode && localGameData.imposterIndices.includes(localCurrentPlayerIndex);
                             const wordToShow = isImposter ? "IMPOSTER" : (isFakeWordPlayer ? localGameData.fakeWord : localGameData.secretWord);
-                            return <CardRevealScreen key={localCurrentPlayerIndex} player={localGameData.players[localCurrentPlayerIndex]} word={wordToShow} onNext={handleLocalNextPlayer} isLastPlayer={localCurrentPlayerIndex === localGameData.players.length - 1} audioManager={audioManagerRef.current} isAiHintEnabled={localGameData.isAiHintEnabled} />;
+                            return <CardRevealScreen 
+                                key={localCurrentPlayerIndex} 
+                                player={localGameData.players[localCurrentPlayerIndex]} 
+                                word={wordToShow}
+                                category={localGameData.category}
+                                onNext={handleLocalNextPlayer} 
+                                isLastPlayer={localCurrentPlayerIndex === localGameData.players.length - 1} 
+                                audioManager={audioManagerRef.current} 
+                                isAiHintEnabled={localGameData.isAiHintEnabled}
+                                initialAiHint={localGameData.aiHint}
+                                onSaveAiHint={(hint) => setLocalGameData(prev => ({...prev, aiHint: hint}))}
+                            />;
                         case 'turnOrder': return <TurnOrderScreen players={localGameData.turnOrder} onStartMission={handleStartLocalActiveGame} audioManager={audioManagerRef.current} isHost={true}/>;
                         case 'active': return <GameTimerScreen lobbyData={localGameData} onEndGame={handleLocalEndGame} firstPlayer={localGameData.firstPlayer} audioManager={audioManagerRef.current} isHost={true} lobbyId={null}/>;
                         case 'result': 
@@ -4722,10 +4731,12 @@
                         return <CardRevealScreen 
                                         isOnline={true} player={{ name: meAsPlayer?.name }} 
                                         word={wordForOnlinePlayer}
+                                        category={lobbyData.category}
                                         audioManager={audioManagerRef.current}
                                         onAcknowledge={handleAcknowledgeCard}
                                         onConfused={handleDeclareConfusion}
                                         isAiHintEnabled={lobbyData.isAiHintEnabled}
+                                        initialAiHint={lobbyData.aiHint} 
                                      />;
                     }
                     if (onlineState === 'turnOrder') {
