@@ -2975,7 +2975,7 @@
 
                             {/* BACK (Revealed) */}
 								<div className="absolute inset-0 rotate-y-180 backface-hidden">
-									 <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden shadow-2xl border ${
+									 <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center justify-start p-6 text-center relative overflow-y-auto no-scrollbar shadow-2xl border ${
 										 word === "IMPOSTER" 
 											? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
 											: 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
@@ -2984,9 +2984,9 @@
                                     <div className="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
                                          <div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine"></div>
                                     </div>
-                                    <div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] z-0 ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
+                                    <div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] z-0 pointer-events-none ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
 
-                                    <div className="relative z-10 flex flex-col items-center justify-center w-full pt-4">
+                                    <div className="relative z-10 flex flex-col items-center justify-center w-full pt-4 flex-shrink-0">
                                         <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-4 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
                                         
                                         {word === "IMPOSTER" ? (
@@ -3009,13 +3009,13 @@
                                     </div>
                                     
                                     {isAiHintEnabled && word !== "IMPOSTER" && aiHint && (
-                                        <div className="relative z-10 w-full mt-auto mb-2 mt-8 animate-fadeIn" style={{ animationDelay: '300ms' }}>
-                                            <div className="px-4 py-3 bg-slate-950/50 rounded-xl border border-white/10">
-                                                <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5">
+                                        <div className="relative z-10 w-full mt-10 mb-4 animate-fadeIn flex-shrink-0" style={{ animationDelay: '300ms' }}>
+                                            <div className="px-4 py-4 bg-slate-950/60 rounded-xl border border-white/10 shadow-lg">
+                                                <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-2 flex items-center justify-center gap-1.5">
                                                     <i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
                                                 </h4>
-                                                <p className="text-white/80 text-xs font-medium leading-snug">{aiHint}</p>
-                                                <p className="text-white/30 text-[9px] mt-2">Disclaimer: AI response may not be accurate.</p>
+                                                <p className="text-white/90 text-sm font-medium leading-relaxed">{aiHint}</p>
+                                                <p className="text-white/30 text-[9px] mt-3 border-t border-white/5 pt-2">Disclaimer: AI response may not be accurate.</p>
                                             </div>
                                         </div>
                                     )}
@@ -4282,8 +4282,17 @@
 
                 // PRE-LOAD AI HINT
                 if (isAiHintEnabled) {
-                    fetchAiHint(secretWord, finalCategory).then(hint => {
-                        setLocalGameData(prev => ({ ...prev, aiHint: hint }));
+                    const promises = [fetchAiHint(secretWord, finalCategory)];
+                    if (isFakeWordMode && fakeWord) {
+                        promises.push(fetchAiHint(fakeWord, finalCategory));
+                    }
+                    
+                    Promise.all(promises).then(([realHint, fakeHint]) => {
+                        setLocalGameData(prev => ({ 
+                            ...prev, 
+                            aiHint: realHint,
+                            fakeWordAiHint: fakeHint || null 
+                        }));
                     });
                 }
 
@@ -4487,6 +4496,11 @@
                 if (lobbyData.isAiHintEnabled) {
                     const generatedHint = await fetchAiHint(secretWord, finalCategory);
                     updatePayload.aiHint = generatedHint;
+                    
+                    if (lobbyData.isFakeWordMode && updatePayload.fakeWord) {
+                        const fakeHint = await fetchAiHint(updatePayload.fakeWord, finalCategory);
+                        updatePayload.fakeWordAiHint = fakeHint;
+                    }
                 }
                 
                 await db.collection('lobbies').doc(lobbyId).update(updatePayload);
@@ -4689,6 +4703,13 @@
                             const isFakeWordPlayer = localGameData.isFakeWordMode && localGameData.fakeWordPlayerIndices.includes(localCurrentPlayerIndex);
                             const isImposter = !localGameData.isFakeWordMode && localGameData.imposterIndices.includes(localCurrentPlayerIndex);
                             const wordToShow = isImposter ? "IMPOSTER" : (isFakeWordPlayer ? localGameData.fakeWord : localGameData.secretWord);
+                            
+                            // Determine correct hint
+                            let hintToShow = localGameData.aiHint;
+                            if (isFakeWordPlayer && localGameData.fakeWordAiHint) {
+                                hintToShow = localGameData.fakeWordAiHint;
+                            }
+
                             return <CardRevealScreen 
                                 key={localCurrentPlayerIndex} 
                                 player={localGameData.players[localCurrentPlayerIndex]} 
@@ -4698,7 +4719,7 @@
                                 isLastPlayer={localCurrentPlayerIndex === localGameData.players.length - 1} 
                                 audioManager={audioManagerRef.current} 
                                 isAiHintEnabled={localGameData.isAiHintEnabled}
-                                initialAiHint={localGameData.aiHint}
+                                initialAiHint={hintToShow}
                                 onSaveAiHint={(hint) => setLocalGameData(prev => ({...prev, aiHint: hint}))}
                             />;
                         case 'turnOrder': return <TurnOrderScreen players={localGameData.turnOrder} onStartMission={handleStartLocalActiveGame} audioManager={audioManagerRef.current} isHost={true}/>;
@@ -4728,6 +4749,13 @@
                         const isFakeWordPlayerOnline = lobbyData.isFakeWordMode && lobbyData.fakeWordPlayerIds?.includes(user.uid);
                         const isImposterOnline = !lobbyData.isFakeWordMode && lobbyData.imposterIds?.includes(user.uid);
                         const wordForOnlinePlayer = isImposterOnline ? "IMPOSTER" : (isFakeWordPlayerOnline ? lobbyData.fakeWord : lobbyData.secretWord);
+                        
+                        // Determine correct hint
+                        let onlineHintToShow = lobbyData.aiHint;
+                        if (isFakeWordPlayerOnline && lobbyData.fakeWordAiHint) {
+                            onlineHintToShow = lobbyData.fakeWordAiHint;
+                        }
+
                         return <CardRevealScreen 
                                         isOnline={true} player={{ name: meAsPlayer?.name }} 
                                         word={wordForOnlinePlayer}
@@ -4736,7 +4764,7 @@
                                         onAcknowledge={handleAcknowledgeCard}
                                         onConfused={handleDeclareConfusion}
                                         isAiHintEnabled={lobbyData.isAiHintEnabled}
-                                        initialAiHint={lobbyData.aiHint} 
+                                        initialAiHint={onlineHintToShow} 
                                      />;
                     }
                     if (onlineState === 'turnOrder') {
