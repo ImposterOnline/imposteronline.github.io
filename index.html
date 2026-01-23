@@ -2974,57 +2974,53 @@
                             </div>
 
                             {/* BACK (Revealed) */}
-							<div className="absolute inset-0 rotate-y-180 backface-hidden">
-								<div className={`w-full h-full rounded-[2.5rem] flex flex-col p-6 text-center relative overflow-hidden shadow-2xl border ${
-									word === "IMPOSTER" 
-										? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
-										: 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
-								}`}>
-									
-									<div className="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
-										<div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine"></div>
-									</div>
-									<div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] z-0 ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
+								<div className="absolute inset-0 rotate-y-180 backface-hidden">
+									 <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden shadow-2xl border ${
+										 word === "IMPOSTER" 
+											? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
+											: 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
+									}`}>
+                                    
+                                    <div className="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
+                                         <div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine"></div>
+                                    </div>
+                                    <div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] z-0 ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
 
-									{/* Top Section (Fixed) */}
-									<div className="relative z-10 flex-shrink-0">
-										<p className={`text-[10px] uppercase tracking-[0.4em] font-bold ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
-									</div>
-
-									{/* Scrollable Content Area */}
-									<div className="relative z-10 flex-1 flex flex-col w-full min-h-0 overflow-y-auto no-scrollbar justify-center">
-										{word === "IMPOSTER" ? (
-											<div className="py-4">
-												<div className="w-28 h-28 flex items-center justify-center mb-6 mx-auto">
-													<img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-24 h-24 drop-shadow-lg" />
-												</div>
-												<h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
-												<p className="text-red-200/60 text-xs font-medium leading-relaxed max-w-[200px] mx-auto">Blend in. Deceive. Don't let them know you are the spy.</p>
-											</div>
-										) : (
-											<div className="flex flex-col justify-center flex-1 py-4">
-												<div className="w-20 h-20 flex items-center justify-center mb-4 mx-auto">
-													<img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-16 h-16 drop-shadow-lg" />
-												</div>
-												<h2 className={`font-display font-bold text-white break-words drop-shadow-sm ${word.length > 20 ? 'text-2xl' : 'text-3xl'}`}>{word}</h2>
-												<p className="text-teal-200/60 text-xs font-medium leading-relaxed max-w-[220px] mx-auto mt-2">Memorize this word. It proves your innocence.</p>
-												
-												{isAiHintEnabled && aiHint && (
-													<div className="w-full mt-auto pt-4 animate-fadeIn" style={{ animationDelay: '300ms' }}>
-														<div className="px-4 py-3 bg-slate-950/50 rounded-xl border border-white/10">
-															<h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5">
-																<i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
-															</h4>
-															<p className="text-white/80 text-xs font-medium leading-snug">{aiHint}</p>
-															<p className="text-white/30 text-[9px] mt-2">Disclaimer: AI response may not be accurate.</p>
-														</div>
-													</div>
-												)}
-											</div>
-										)}
-									</div>
-								</div>
-							</div>
+                                    <div className="relative z-10 flex flex-col items-center justify-center w-full pt-4">
+                                        <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-4 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
+                                        
+                                        {word === "IMPOSTER" ? (
+                                            <>
+                                                <div className="w-28 h-28 flex items-center justify-center mb-6">
+                                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-24 h-24 drop-shadow-lg" />
+                                                </div>
+                                                <h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
+                                                <p className="text-red-200/60 text-xs font-medium leading-relaxed max-w-[200px]">Blend in. Deceive. Don't let them know you are the spy.</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-28 h-28 flex items-center justify-center mb-6">
+                                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-20 h-20 drop-shadow-lg" />
+                                                </div>
+                                                <h2 className="text-3xl font-display font-bold text-white mb-4 drop-shadow-sm">{word}</h2>
+                                                <p className="text-teal-200/60 text-xs font-medium leading-relaxed max-w-[200px] mb-3">Memorize this word. It proves your innocence.</p>
+                                            </>
+                                        )}
+                                    </div>
+                                    
+                                    {isAiHintEnabled && word !== "IMPOSTER" && aiHint && (
+                                        <div className="relative z-10 w-full mt-auto mb-2 mt-8 animate-fadeIn" style={{ animationDelay: '300ms' }}>
+                                            <div className="px-4 py-3 bg-slate-950/50 rounded-xl border border-white/10">
+                                                <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5">
+                                                    <i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
+                                                </h4>
+                                                <p className="text-white/80 text-xs font-medium leading-snug">{aiHint}</p>
+                                                <p className="text-white/30 text-[9px] mt-2">Disclaimer: AI response may not be accurate.</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
