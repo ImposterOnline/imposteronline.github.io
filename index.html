@@ -2975,50 +2975,58 @@
 
                             {/* BACK (Revealed) */}
 								<div className="absolute inset-0 rotate-y-180 backface-hidden">
-									 <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden shadow-2xl border ${
+									 <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center p-4 text-center relative overflow-hidden shadow-2xl border ${
 										 word === "IMPOSTER" 
 											? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
 											: 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
 									}`}>
                                     
+                                    {/* Background Effects */}
                                     <div className="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
                                          <div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine"></div>
                                     </div>
                                     <div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] z-0 ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
 
-                                    <div className="relative z-10 flex flex-col items-center justify-center w-full pt-4">
-                                        <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-4 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
+                                    {/* Scrollable Content Container */}
+                                    <div className="relative z-10 w-full h-full overflow-y-auto no-scrollbar flex flex-col items-center">
                                         
-                                        {word === "IMPOSTER" ? (
-                                            <>
-                                                <div className="w-28 h-28 flex items-center justify-center mb-6">
-                                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-24 h-24 drop-shadow-lg" />
+                                        <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-2 flex-shrink-0 mt-2 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
+                                        
+                                        {/* Main Identity Content - Auto Margins ensure it centers if space allows, scrolls if not */}
+                                        <div className="my-auto flex flex-col items-center w-full">
+                                            {word === "IMPOSTER" ? (
+                                                <>
+                                                    <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center mb-4">
+                                                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-20 h-20 drop-shadow-lg" />
+                                                    </div>
+                                                    <h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-2 drop-shadow-sm break-words w-full px-2 leading-tight">IMPOSTER</h2>
+                                                    <p className="text-red-200/60 text-xs font-medium leading-relaxed max-w-[200px]">Blend in. Deceive. Don't let them know you are the spy.</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center mb-4">
+                                                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-20 h-20 drop-shadow-lg" />
+                                                    </div>
+                                                    {/* Added break-words and dynamic text sizing logic via CSS/Classes */}
+                                                    <h2 className="text-3xl font-display font-bold text-white mb-2 drop-shadow-sm break-words w-full px-2 leading-tight">{word}</h2>
+                                                    <p className="text-teal-200/60 text-xs font-medium leading-relaxed max-w-[200px] mb-2">Memorize this word. It proves your innocence.</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        
+                                        {/* AI Hint - Added mt-4 to separate it, removed absolute positioning so it flows */}
+                                        {isAiHintEnabled && word !== "IMPOSTER" && aiHint && (
+                                            <div className="w-full mt-4 flex-shrink-0 animate-fadeIn pb-2">
+                                                <div className="px-3 py-2 bg-slate-950/50 rounded-xl border border-white/10 text-left">
+                                                    <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1 flex items-center gap-1.5">
+                                                        <i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
+                                                    </h4>
+                                                    <p className="text-white/90 text-xs font-medium leading-snug break-words">{aiHint}</p>
+                                                    <p className="text-white/30 text-[8px] mt-1 text-right italic">AI may be inaccurate.</p>
                                                 </div>
-                                                <h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
-                                                <p className="text-red-200/60 text-xs font-medium leading-relaxed max-w-[200px]">Blend in. Deceive. Don't let them know you are the spy.</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="w-28 h-28 flex items-center justify-center mb-6">
-                                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-20 h-20 drop-shadow-lg" />
-                                                </div>
-                                                <h2 className="text-3xl font-display font-bold text-white mb-4 drop-shadow-sm">{word}</h2>
-                                                <p className="text-teal-200/60 text-xs font-medium leading-relaxed max-w-[200px] mb-3">Memorize this word. It proves your innocence.</p>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
-                                    
-                                    {isAiHintEnabled && word !== "IMPOSTER" && aiHint && (
-                                        <div className="relative z-10 w-full mt-auto mb-2 mt-8 animate-fadeIn" style={{ animationDelay: '300ms' }}>
-                                            <div className="px-4 py-3 bg-slate-950/50 rounded-xl border border-white/10">
-                                                <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5">
-                                                    <i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
-                                                </h4>
-                                                <p className="text-white/80 text-xs font-medium leading-snug">{aiHint}</p>
-                                                <p className="text-white/30 text-[9px] mt-2">Disclaimer: AI response may not be accurate.</p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
