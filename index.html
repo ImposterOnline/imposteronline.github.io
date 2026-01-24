@@ -1779,23 +1779,6 @@
                                             <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${lobbyData.speakCategory ? 'translate-x-5' : 'translate-x-0'}`} />
                                         </button>
                                     </div>
-                                    <div className="h-px bg-white/10"></div>
-                                    <div className="flex items-center justify-between">
-										<div className="pr-4">
-											<h3 className="font-bold text-white/90 text-base flex items-center gap-3">
-												<i className="fa-solid fa-robot text-cyan-400/80 w-5 text-center"></i>
-												<span className="flex items-center">AI Hint <span className="ml-2 text-[10px] bg-white/5 text-white/40 px-1.5 rounded font-bold tracking-wider">BETA</span></span>
-											</h3>
-											<p className="text-white/40 text-xs mt-1 pl-8">Shows an AI-generated hint below the secret word. May be inaccurate.</p>
-										</div>
-                                        <button 
-                                            onClick={() => handleSettingChange('isAiHintEnabled', lobbyData.isAiHintEnabled)}
-                                            disabled={!isHost}
-                                            className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${lobbyData.isAiHintEnabled ? 'bg-cyan-500/80' : 'bg-white/10'} ${!isHost && 'opacity-50 cursor-not-allowed'}`}
-                                        >
-                                            <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${lobbyData.isAiHintEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                                        </button>
-                                    </div>
                                  </section>
                                 <section>
                                     <div className="flex items-center justify-between mb-4 px-2">
@@ -2344,19 +2327,11 @@
                 } catch { return false; }
             });
 
-            const [isAiHintEnabled, setIsAiHintEnabled] = useState(() => {
-                try {
-                    const saved = localStorage.getItem('imposter_ai_hint_enabled');
-                    return saved ? JSON.parse(saved) : false;
-                } catch { return false; }
-            });
-
             const [newPlayerName, setNewPlayerName] = useState('');
             const [timerMinutes, setTimerMinutes] = useState(3);
             const [timerEnabled, setTimerEnabled] = useState(true);
             const [inspectedCategory, setInspectedCategory] = useState(null);
             const [enableTwoImposters, setEnableTwoImposters] = useState(false);
-            const [showSettings, setShowSettings] = useState(false);
             
             // Voice recording state
             const [isRecording, setIsRecording] = useState(false);
@@ -2376,8 +2351,6 @@
             useEffect(() => { localStorage.setItem('imposter_random_mode', JSON.stringify(isRandomMode)); }, [isRandomMode]);
             useEffect(() => { localStorage.setItem('imposter_speak_category', JSON.stringify(speakCategory)); }, [speakCategory]);
             useEffect(() => { localStorage.setItem('imposter_fake_word_mode', JSON.stringify(isFakeWordMode)); }, [isFakeWordMode]);
-            useEffect(() => { localStorage.setItem('imposter_ai_hint_enabled', JSON.stringify(isAiHintEnabled)); }, [isAiHintEnabled]);
-
 
             useEffect(() => {
                 if (players.length < 10) {
@@ -2489,7 +2462,7 @@
                 if (players.length >= MIN_PLAYERS) {
                     if (navigator.vibrate) navigator.vibrate(30);
                     audioManager.playSound(isRandomMode ? 'startRandomMission' : 'startMission');
-                    onStartGame(players, isRandomMode ? [] : [selectedCategory], timerEnabled ? timerMinutes * 60 : null, isRandomMode, speakCategory, enableTwoImposters, isFakeWordMode, isAiHintEnabled);
+                    onStartGame(players, isRandomMode ? [] : [selectedCategory], timerEnabled ? timerMinutes * 60 : null, isRandomMode, speakCategory, enableTwoImposters, isFakeWordMode);
                 }
             };
             
@@ -2596,137 +2569,112 @@
                             </section>
 
                             {/* Settings */}
-							<section className="mb-6 glass-panel rounded-[2rem] p-6 space-y-4">
-								<div className="space-y-4">
-									{/* All the original settings content is preserved inside */}
-									<div className="flex items-center justify-between">
-										<div className="pr-4">
-											<h3 className="font-bold text-white/90 text-base flex items-center gap-3">
-												<i className="fa-solid fa-masks-theater text-yellow-400/80 w-5 text-center"></i>
-												<span>Fake Word Mode</span>
-											</h3>
-											<p className="text-white/40 text-xs mt-1 pl-8">One agent gets a different word. They don't know it's fake.</p>
-										</div>
-										<button 
-											onClick={() => {
-												setIsFakeWordMode(!isFakeWordMode);
-												audioManager.playSound(!isFakeWordMode ? 'switchOn' : 'switchOff');
-												if(navigator.vibrate) navigator.vibrate(10);
-											}}
-											className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${isFakeWordMode ? 'bg-yellow-500/80' : 'bg-white/10'}`}
-										>
-											<div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isFakeWordMode ? 'translate-x-5' : 'translate-x-0'}`} />
-										</button>
-									</div>
-									
-									<div className="h-px bg-white/10"></div>
+                            <section className="mb-6 glass-panel rounded-[2rem] p-6 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="pr-4">
+                                        <h3 className="font-bold text-white/90 text-base flex items-center gap-3">
+                                            <i className="fa-solid fa-masks-theater text-yellow-400/80 w-5 text-center"></i>
+                                            <span>Fake Word Mode</span>
+                                        </h3>
+                                        <p className="text-white/40 text-xs mt-1 pl-8">One agent gets a different word. They don't know it's fake.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setIsFakeWordMode(!isFakeWordMode);
+                                            audioManager.playSound(!isFakeWordMode ? 'switchOn' : 'switchOff');
+                                            if(navigator.vibrate) navigator.vibrate(10);
+                                        }}
+                                        className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${isFakeWordMode ? 'bg-yellow-500/80' : 'bg-white/10'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isFakeWordMode ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                                
+                                <div className="h-px bg-white/10"></div>
 
-									<div 
-										className={`flex items-center justify-between transition-opacity duration-300 ${players.length < 10 ? 'opacity-50' : ''}`}
-										title={players.length < 10 ? "Requires 10 or more players" : (isFakeWordMode ? "Add a second fake word card" : "Add a second spy to the mission")}
+                                <div 
+									className={`flex items-center justify-between transition-opacity duration-300 ${players.length < 10 ? 'opacity-50' : ''}`}
+									title={players.length < 10 ? "Requires 10 or more players" : (isFakeWordMode ? "Add a second fake word card" : "Add a second spy to the mission")}
+								>
+                                    <div className="pr-4">
+                                        <h3 className="font-bold text-white/90 text-base flex items-center gap-3">
+                                            <i className="fa-solid fa-user-secret text-orange-400/80 w-5 text-center"></i>
+                                            <span>{isFakeWordMode ? 'Second Fake Card' : 'Second Imposter'}</span>
+                                        </h3>
+                                        <p className="text-white/40 text-xs mt-1 pl-8">Adds a second rogue agent when 10 or more players are in the lobby.</p>
+                                    </div>
+                                    <button 
+										onClick={() => {
+											if (players.length >= 10) {
+												setEnableTwoImposters(!enableTwoImposters);
+												audioManager.playSound(!enableTwoImposters ? 'switchOn' : 'switchOff');
+												if(navigator.vibrate) navigator.vibrate(10);
+											}
+										}}
+										disabled={players.length < 10}
+										className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${enableTwoImposters ? 'bg-orange-500/80' : 'bg-white/10'} ${players.length < 10 ? 'cursor-not-allowed' : ''}`}
 									>
-										<div className="pr-4">
-											<h3 className="font-bold text-white/90 text-base flex items-center gap-3">
-												<i className="fa-solid fa-user-secret text-orange-400/80 w-5 text-center"></i>
-												<span>{isFakeWordMode ? 'Second Fake Card' : 'Second Imposter'}</span>
-											</h3>
-											<p className="text-white/40 text-xs mt-1 pl-8">Adds a second rogue agent when 10 or more players are in the lobby.</p>
-										</div>
-										<button 
-											onClick={() => {
-												if (players.length >= 10) {
-													setEnableTwoImposters(!enableTwoImposters);
-													audioManager.playSound(!enableTwoImposters ? 'switchOn' : 'switchOff');
-													if(navigator.vibrate) navigator.vibrate(10);
-												}
-											}}
-											disabled={players.length < 10}
-											className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${enableTwoImposters ? 'bg-orange-500/80' : 'bg-white/10'} ${players.length < 10 ? 'cursor-not-allowed' : ''}`}
-										>
-											<div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enableTwoImposters ? 'translate-x-5' : 'translate-x-0'}`} />
-										</button>
-									</div>
+                                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enableTwoImposters ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
 
-									<div className="h-px bg-white/10"></div>
+                                <div className="h-px bg-white/10"></div>
 
-									<div className={`flex items-center justify-between transition-all duration-300`}>
-										<div className="pr-4">
-											<h3 className="font-bold text-white/90 text-base flex items-center gap-3">
-												<i className="fa-solid fa-stopwatch text-sky-400/80 w-5 text-center"></i>
-												<span>Countdown Timer</span>
-											</h3>
-											<p className="text-white/40 text-xs mt-1 pl-8">Sets a time limit for discussion. When disabled, the game is untimed.</p>
-										</div>
-										<button 
-											onClick={() => {
-												setTimerEnabled(!timerEnabled);
-												audioManager.playSound(!timerEnabled ? 'switchOn' : 'switchOff');
-												if(navigator.vibrate) navigator.vibrate(10);
-											}}
-											className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${timerEnabled ? 'bg-sky-500/80' : 'bg-white/10'}`}
-										>
-											<div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${timerEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-										</button>
-									</div>
-									<div className={`transition-all duration-300 overflow-hidden ${timerEnabled ? 'opacity-100 max-h-40 pt-4' : 'opacity-0 max-h-0'}`}>
-										<div className="flex justify-between items-end mb-2 px-1">
-											<span className="text-white/40 text-[10px] font-bold uppercase">Duration</span>
-											<span className="font-mono text-xl font-bold text-white">{timerMinutes} <span className="text-sm text-white/50">min</span></span>
-										</div>
-										<input
-											type="range"
-											min="1"
-											max="15"
-											value={timerMinutes}
-											onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
-											className="w-full h-7 appearance-none cursor-pointer timer-slider bg-transparent"
-										/>
-									</div>
+                                <div className={`flex items-center justify-between transition-all duration-300`}>
+                                     <div className="pr-4">
+                                        <h3 className="font-bold text-white/90 text-base flex items-center gap-3">
+                                            <i className="fa-solid fa-stopwatch text-sky-400/80 w-5 text-center"></i>
+                                            <span>Countdown Timer</span>
+                                        </h3>
+                                        <p className="text-white/40 text-xs mt-1 pl-8">Sets a time limit for discussion. When disabled, the game is untimed.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setTimerEnabled(!timerEnabled);
+                                            audioManager.playSound(!timerEnabled ? 'switchOn' : 'switchOff');
+                                            if(navigator.vibrate) navigator.vibrate(10);
+                                        }}
+                                        className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${timerEnabled ? 'bg-sky-500/80' : 'bg-white/10'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${timerEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                                <div className={`transition-all duration-300 overflow-hidden ${timerEnabled ? 'opacity-100 max-h-40 pt-4' : 'opacity-0 max-h-0'}`}>
+                                    <div className="flex justify-between items-end mb-2 px-1">
+                                        <span className="text-white/40 text-[10px] font-bold uppercase">Duration</span>
+                                        <span className="font-mono text-xl font-bold text-white">{timerMinutes} <span className="text-sm text-white/50">min</span></span>
+                                    </div>
+                                    <input
+										type="range"
+										min="1"
+										max="15"
+										value={timerMinutes}
+										onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
+										className="w-full h-7 appearance-none cursor-pointer timer-slider bg-transparent"
+									/>
+                                </div>
 
-									<div className="h-px bg-white/10"></div>
+                                <div className="h-px bg-white/10"></div>
 
-									<div className="flex items-center justify-between">
-										<div className="pr-4">
-											<h3 className="font-bold text-white/90 text-base flex items-center gap-3">
-												<i className="fa-solid fa-volume-high text-purple-400/80 w-5 text-center"></i>
-												<span>Speak Category</span>
-											</h3>
-											<p className="text-white/40 text-xs mt-1 pl-8">Announces the chosen category name when the mission begins.</p>
-										</div>
-										<button 
-											onClick={() => {
-												setSpeakCategory(!speakCategory);
-												audioManager.playSound(!speakCategory ? 'switchOn' : 'switchOff');
-												if(navigator.vibrate) navigator.vibrate(10);
-											}}
-											className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${speakCategory ? 'bg-purple-500/80' : 'bg-white/10'}`}
-										>
-											<div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${speakCategory ? 'translate-x-5' : 'translate-x-0'}`} />
-										</button>
-									</div>
-
-									<div className="h-px bg-white/10"></div>
-
-									<div className="flex items-center justify-between">
-                                        <div className="pr-4">
-                                            <h3 className="font-bold text-white/90 text-base flex items-center gap-3">
-                                                <i className="fa-solid fa-robot text-cyan-400/80 w-5 text-center"></i>
-                                                <span className="flex items-center">AI Hint <span className="ml-2 text-[10px] bg-white/5 text-white/40 px-1.5 rounded font-bold tracking-wider">BETA</span></span>
-                                            </h3>
-                                            <p className="text-white/40 text-xs mt-1 pl-8">Shows an AI-generated hint. May not always be accurate.</p>
-                                        </div>
-										<button 
-											onClick={() => {
-												setIsAiHintEnabled(!isAiHintEnabled);
-												audioManager.playSound(!isAiHintEnabled ? 'switchOn' : 'switchOff');
-												if(navigator.vibrate) navigator.vibrate(10);
-											}}
-											className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${isAiHintEnabled ? 'bg-cyan-500/80' : 'bg-white/10'}`}
-										>
-											<div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isAiHintEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-										</button>
-									</div>
-								</div>
+                                 <div className="flex items-center justify-between">
+                                    <div className="pr-4">
+                                        <h3 className="font-bold text-white/90 text-base flex items-center gap-3">
+                                            <i className="fa-solid fa-volume-high text-purple-400/80 w-5 text-center"></i>
+                                            <span>Speak Category</span>
+                                        </h3>
+                                        <p className="text-white/40 text-xs mt-1 pl-8">Announces the chosen category name when the mission begins.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setSpeakCategory(!speakCategory);
+                                            audioManager.playSound(!speakCategory ? 'switchOn' : 'switchOff');
+                                            if(navigator.vibrate) navigator.vibrate(10);
+                                        }}
+                                        className={`flex-shrink-0 w-12 h-7 rounded-full p-1 transition-all duration-300 ${speakCategory ? 'bg-purple-500/80' : 'bg-white/10'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${speakCategory ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
                             </section>
 
                             {/* Categories */}
@@ -2879,13 +2827,10 @@
         };
 
         // 2. Card Reveal Screen (Enhanced with 3D Flip)
-        const CardRevealScreen = ({ player, word, category, onNext, isLastPlayer, audioManager, onAcknowledge, isOnline, onConfused, isAiHintEnabled, initialAiHint }) => {
+        const CardRevealScreen = ({ player, word, onNext, isLastPlayer, audioManager, onAcknowledge, isOnline, onConfused }) => {
             const [step, setStep] = useState(isOnline ? 'reveal' : 'handover'); 
             const [isFlipped, setIsFlipped] = useState(false);
             
-            // Use the hint passed from parent (Local) or DB (Online) directly
-            const aiHint = initialAiHint;
-
             useEffect(() => {
                 if(!isOnline) {
                     setStep('handover');
@@ -2975,61 +2920,44 @@
                             </div>
 
                             {/* BACK (Revealed) */}
-								<div className="absolute inset-0 rotate-y-180 backface-hidden">
-									 <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center p-4 text-center relative overflow-hidden shadow-2xl border ${
-										 word === "IMPOSTER" 
-											? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
-											: 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
-									}`}>
+                            <div className="absolute inset-0 rotate-y-180 backface-hidden">
+                                <div className={`w-full h-full rounded-[2.5rem] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl border ${
+                                     word === "IMPOSTER" 
+                                        ? 'bg-gradient-to-br from-red-950 to-slate-950 border-red-500/20' 
+                                        : 'bg-gradient-to-br from-teal-950 to-slate-950 border-teal-500/20'
+                                }`}>
                                     
-                                    {/* Background Effects */}
+                                    {/* Shine Effect */}
                                     <div className="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
                                          <div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine"></div>
                                     </div>
+
                                     <div className={`absolute top-[-50%] w-full h-full opacity-30 blur-[100px] z-0 ${word === 'IMPOSTER' ? 'bg-red-600' : 'bg-teal-500'}`}></div>
 
-                                    {/* Scrollable Content Container */}
-                                    <div className="relative z-10 w-full h-full overflow-y-auto no-scrollbar flex flex-col items-center">
+                                    <div className="relative z-10 flex flex-col items-center justify-center h-full">
+                                        <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-8 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
                                         
-                                        <p className={`text-[10px] uppercase tracking-[0.4em] font-bold mb-2 flex-shrink-0 mt-2 ${word === 'IMPOSTER' ? 'text-red-400' : 'text-teal-400'}`}>Your Mission Role</p>
-                                        
-                                        {/* Main Identity Content - Auto Margins ensure it centers if space allows, scrolls if not */}
-                                        <div className="my-auto flex flex-col items-center w-full">
-                                            {word === "IMPOSTER" ? (
-                                                <>
-                                                    <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center mb-4">
-                                                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-20 h-20 drop-shadow-lg" />
-                                                    </div>
-                                                    <h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-2 drop-shadow-sm break-words w-full px-2 leading-tight">IMPOSTER</h2>
-                                                    <p className="text-red-200/60 text-xs font-medium leading-relaxed max-w-[200px]">Blend in. Deceive. Don't let them know you are the spy.</p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center mb-4">
-                                                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-20 h-20 drop-shadow-lg" />
-                                                    </div>
-                                                    {/* Added break-words and dynamic text sizing logic via CSS/Classes */}
-                                                    <h2 className="text-3xl font-display font-bold text-white mb-2 drop-shadow-sm break-words w-full px-2 leading-tight">{word}</h2>
-                                                    <p className="text-teal-200/60 text-xs font-medium leading-relaxed max-w-[200px] mb-2">Memorize this word. It proves your innocence.</p>
-                                                </>
-                                            )}
-                                        </div>
-                                        
-                                        {/* AI Hint - Added mt-4 to separate it, removed absolute positioning so it flows */}
-                                        {isAiHintEnabled && word !== "IMPOSTER" && aiHint && (
-                                            <div className="w-full mt-4 flex-shrink-0 animate-fadeIn pb-2">
-                                                <div className="px-3 py-2 bg-slate-950/50 rounded-xl border border-white/10 text-left">
-                                                    <h4 className="text-cyan-400/80 text-[9px] font-bold tracking-widest uppercase mb-1 flex items-center gap-1.5">
-                                                        <i className="fa-solid fa-robot text-xs"></i> AI Hint (Beta)
-                                                    </h4>
-                                                    <p className="text-white/90 text-xs font-medium leading-snug break-words">{aiHint}</p>
-                                                    <p className="text-white/30 text-[8px] mt-1 text-right italic">AI may be inaccurate.</p>
+                                        {word === "IMPOSTER" ? (
+                                            <>
+                                                <div className="w-28 h-28 flex items-center justify-center mb-6">
+                                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/shushing-face_1f92b.png" alt="Shushing" draggable="false" className="w-24 h-24 drop-shadow-lg" />
                                                 </div>
-                                            </div>
+                                                <h2 className="text-4xl font-display font-black text-red-500 tracking-tight mb-4 drop-shadow-sm">IMPOSTER</h2>
+                                                <p className="text-red-200/60 text-xs font-medium leading-relaxed max-w-[200px]">Blend in. Deceive. Don't let them know you are the spy.</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-28 h-28 flex items-center justify-center mb-6">
+                                                    <img src="https://em-content.zobj.net/source/microsoft-teams/337/clipboard_1f4cb.png" alt="Clipboard" draggable="false" className="w-20 h-20 drop-shadow-lg" />
+                                                </div>
+                                                <h2 className="text-3xl font-display font-bold text-white mb-4 drop-shadow-sm">{word}</h2>
+                                                <p className="text-teal-200/60 text-xs font-medium leading-relaxed max-w-[200px]">Memorize this word. It proves your innocence.</p>
+                                            </>
                                         )}
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -3647,61 +3575,6 @@
 
         const generateLobbyId = () => generateRandomString(6, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
         const generateLobbyPassword = () => generateRandomString(4, 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789');
-
-        const fetchAiHint = async (word, category) => {
-            const API_KEY = "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";
-            const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-            const systemPrompt = `You are a hint master for a social deduction game called "Imposter". Your task is to provide a very short, one-sentence, high-level descriptive hint for a given word or phrase.
-        RULES:
-        1.  **DO NOT** use the secret word or any part of it in your response.
-        2.  The hint should help players understand the category or nature of the word without giving it away.
-        3.  Be concise and clear. Aim for 3-10 words.
-        4.  Do not add any conversational text or preamble. Just provide the hint.
-        5.  **CONTEXT IS KEY:** Use the provided 'Category' to determine the specific definition. For example, if Category is 'Supercell' and Word is 'Wizard', describe the Clash of Clans troop (e.g., "A magical troop that shoots fireballs"), NOT a generic fantasy wizard.
-
-        Examples:
-        - Category: "Music", Word: "All I Want for Christmas Is You" -> Hint: A popular Christmas song by Mariah Carey.
-        - Category: "Places", Word: "Eiffel Tower" -> Hint: A famous landmark located in Paris, France.
-        - Category: "Supercell", Word: "Wizard" -> Hint: A ranged troop that shoots destructive fireballs.
-        - Category: "Mythology", Word: "Wizard" -> Hint: A person who practices magic and sorcery.`;
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${API_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: "llama-3.3-70b-versatile",
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: `Category: "${category}"\nWord: "${word}"` }
-                        ],
-                        temperature: 0.4,
-                        max_tokens: 60,
-                    })
-                });
-
-                if (!response.ok) {
-                    console.error("Groq API Error:", response.status, await response.text());
-                    return "Hint could not be generated at this time.";
-                }
-
-                const data = await response.json();
-                let hint = data.choices[0]?.message?.content.trim();
-                if (hint.startsWith("Hint: ")) {
-                    hint = hint.substring(6);
-                }
-                
-                return hint || "Hint could not be generated.";
-
-            } catch (error) {
-                console.error("Error fetching AI hint:", error);
-                return "Hint not available due to a network error.";
-            }
-        };
 		
 		// --- CORRECTED & RELIABLE: Asset Preloading without Fetch ---
         const preloadAssets = (onProgress) => {
@@ -3812,7 +3685,6 @@
                 secretWord: '',
                 fakeWord: '',
                 isFakeWordMode: false,
-                isAiHintEnabled: false,
                 duration: null,
                 firstPlayer: '',
                 category: '',
@@ -4225,7 +4097,7 @@
 
 
             // --- LOCAL GAME HANDLERS ---
-            const startLocalGame = (players, selectedCategories, duration, isRandomMode, speakCategory, enableTwoImposters, isFakeWordMode, isAiHintEnabled) => {
+            const startLocalGame = (players, selectedCategories, duration, isRandomMode, speakCategory, enableTwoImposters, isFakeWordMode) => {
                 // Use proper shuffle
                 const shuffledPlayers = shuffleArray([...players]);
                 
@@ -4280,31 +4152,12 @@
                     secretWord,
                     fakeWord,
                     isFakeWordMode,
-                    isAiHintEnabled,
-                    aiHint: null, // Initialize aiHint
                     duration,
                     firstPlayer: shuffledPlayers[0].name,
                     category: finalCategory,
                     speakCategory,
                     turnOrder: shuffledPlayers.map((p, i) => ({ name: p.name, id: `local_${i}` }))
                 });
-
-                // PRE-LOAD AI HINT
-                if (isAiHintEnabled) {
-                    const promises = [fetchAiHint(secretWord, finalCategory)];
-                    if (isFakeWordMode && fakeWord) {
-                        promises.push(fetchAiHint(fakeWord, finalCategory));
-                    }
-                    
-                    Promise.all(promises).then(([realHint, fakeHint]) => {
-                        setLocalGameData(prev => ({ 
-                            ...prev, 
-                            aiHint: realHint,
-                            fakeWordAiHint: fakeHint || null 
-                        }));
-                    });
-                }
-
                 setLocalCurrentPlayerIndex(0);
                 setLocalGameState('pass');
             };
@@ -4338,7 +4191,7 @@
                 setLocalGameState('setup');
                 setLocalGameData({
                     players: [], imposterIndices: [], fakeWordPlayerIndices: [], secretWord: '', fakeWord: '', isFakeWordMode: false,
-                    duration: null, firstPlayer: '', category: '', speakCategory: false, isAiHintEnabled: false
+                    duration: null, firstPlayer: '', category: '', speakCategory: false
                 });
             };
             
@@ -4404,7 +4257,6 @@
                     hostId: user.uid, password: newPassword, category: 'Movies',
                     isRandomMode: false, speakCategory: false, gameState: 'waiting',
                     isFakeWordMode: false,
-                    isAiHintEnabled: false,
                     enableTwoImposters: false, notifyImposterOnVote: false,
                     usedWords: [],
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -4442,7 +4294,6 @@
             
              const handleStartGameOnline = async () => {
                 if (lobbyPlayers.length < 3) return;
-                if (audioManagerRef.current) audioManagerRef.current.playSound('uiClick'); // Feedback immediate
                 
                 // --- ONLINE CRASH FIX START ---
                 let finalCategory = lobbyData.category;
@@ -4499,17 +4350,6 @@
                 } else {
                     updatePayload.imposterIds = roguePlayerIds;
                     updatePayload.fakeWordPlayerIds = []; // Clear fakeWordPlayerIds
-                }
-
-                // Generate AI Hint once for everyone if enabled
-                if (lobbyData.isAiHintEnabled) {
-                    const generatedHint = await fetchAiHint(secretWord, finalCategory);
-                    updatePayload.aiHint = generatedHint;
-                    
-                    if (lobbyData.isFakeWordMode && updatePayload.fakeWord) {
-                        const fakeHint = await fetchAiHint(updatePayload.fakeWord, finalCategory);
-                        updatePayload.fakeWordAiHint = fakeHint;
-                    }
                 }
                 
                 await db.collection('lobbies').doc(lobbyId).update(updatePayload);
@@ -4712,25 +4552,7 @@
                             const isFakeWordPlayer = localGameData.isFakeWordMode && localGameData.fakeWordPlayerIndices.includes(localCurrentPlayerIndex);
                             const isImposter = !localGameData.isFakeWordMode && localGameData.imposterIndices.includes(localCurrentPlayerIndex);
                             const wordToShow = isImposter ? "IMPOSTER" : (isFakeWordPlayer ? localGameData.fakeWord : localGameData.secretWord);
-                            
-                            // Determine correct hint
-                            let hintToShow = localGameData.aiHint;
-                            if (isFakeWordPlayer && localGameData.fakeWordAiHint) {
-                                hintToShow = localGameData.fakeWordAiHint;
-                            }
-
-                            return <CardRevealScreen 
-                                key={localCurrentPlayerIndex} 
-                                player={localGameData.players[localCurrentPlayerIndex]} 
-                                word={wordToShow}
-                                category={localGameData.category}
-                                onNext={handleLocalNextPlayer} 
-                                isLastPlayer={localCurrentPlayerIndex === localGameData.players.length - 1} 
-                                audioManager={audioManagerRef.current} 
-                                isAiHintEnabled={localGameData.isAiHintEnabled}
-                                initialAiHint={hintToShow}
-                                onSaveAiHint={(hint) => setLocalGameData(prev => ({...prev, aiHint: hint}))}
-                            />;
+                            return <CardRevealScreen key={localCurrentPlayerIndex} player={localGameData.players[localCurrentPlayerIndex]} word={wordToShow} onNext={handleLocalNextPlayer} isLastPlayer={localCurrentPlayerIndex === localGameData.players.length - 1} audioManager={audioManagerRef.current} />;
                         case 'turnOrder': return <TurnOrderScreen players={localGameData.turnOrder} onStartMission={handleStartLocalActiveGame} audioManager={audioManagerRef.current} isHost={true}/>;
                         case 'active': return <GameTimerScreen lobbyData={localGameData} onEndGame={handleLocalEndGame} firstPlayer={localGameData.firstPlayer} audioManager={audioManagerRef.current} isHost={true} lobbyId={null}/>;
                         case 'result': 
@@ -4758,22 +4580,12 @@
                         const isFakeWordPlayerOnline = lobbyData.isFakeWordMode && lobbyData.fakeWordPlayerIds?.includes(user.uid);
                         const isImposterOnline = !lobbyData.isFakeWordMode && lobbyData.imposterIds?.includes(user.uid);
                         const wordForOnlinePlayer = isImposterOnline ? "IMPOSTER" : (isFakeWordPlayerOnline ? lobbyData.fakeWord : lobbyData.secretWord);
-                        
-                        // Determine correct hint
-                        let onlineHintToShow = lobbyData.aiHint;
-                        if (isFakeWordPlayerOnline && lobbyData.fakeWordAiHint) {
-                            onlineHintToShow = lobbyData.fakeWordAiHint;
-                        }
-
                         return <CardRevealScreen 
                                         isOnline={true} player={{ name: meAsPlayer?.name }} 
                                         word={wordForOnlinePlayer}
-                                        category={lobbyData.category}
                                         audioManager={audioManagerRef.current}
                                         onAcknowledge={handleAcknowledgeCard}
                                         onConfused={handleDeclareConfusion}
-                                        isAiHintEnabled={lobbyData.isAiHintEnabled}
-                                        initialAiHint={onlineHintToShow} 
                                      />;
                     }
                     if (onlineState === 'turnOrder') {
