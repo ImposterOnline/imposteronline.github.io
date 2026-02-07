@@ -402,15 +402,15 @@
             }
         }
         /* Jitsi IFrame Style */
-        #jitsi-container {
-            position: fixed;
-            bottom: 1rem;
-            left: 1rem;
-            width: 0;
-            height: 0;
-            opacity: 0;
-            pointer-events: none;
-        }
+			#jitsi-container {
+			position: absolute;
+			/* Move it far off the top-left corner of the screen */
+			top: -9999px; 
+			left: -9999px;
+			/* Give it a 1px dimension to keep it "active" */
+			width: 1px;
+			height: 1px;
+		}
     </style>
 </head>
 <body class="select-none">
