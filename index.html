@@ -1427,7 +1427,19 @@
         // NEW: QR Code Modal
 		const QRCodeModal = ({ lobbyId, password, onClose, audioManager, season }) => {
 			const inviteLink = `${window.location.origin}${window.location.pathname}?lobbyId=${lobbyId}&password=${password}`;
-			const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(inviteLink)}&qzone=1&margin=1&bgcolor=f8fafc&color=020617`; // bg-slate-50, text-slate-950
+			
+            let qrColor = "020617"; // Default slate-950
+            let qrBgColor = "f8fafc"; // Default slate-50
+            
+            if (season === 'christmas') {
+                qrColor = "0369a1"; // Cold blue (sky-700)
+                qrBgColor = "f0f9ff"; // sky-50
+            } else if (season === 'halloween') {
+                qrColor = "ea580c"; // Dark orange (orange-600) for contrast
+                qrBgColor = "fff7ed"; // orange-50
+            }
+            
+			const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(inviteLink)}&qzone=0&margin=0&bgcolor=${qrBgColor}&color=${qrColor}`;
 
 			const getLogoUrl = () => {
 				if (season === 'christmas') {
