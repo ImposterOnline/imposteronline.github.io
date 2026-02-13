@@ -107,18 +107,27 @@
             };
 
             const season = getSeasonalInfo();
+            
+            // This forces the browser to clear the cache by adding a unique version string
+            const cacheBuster = "?v=" + season + "-" + new Date().getFullYear(); 
+
             const images = {
                 christmas: "https://icons.iconarchive.com/icons/microsoft/fluentui-emoji-3d/1024/Snowman-3d-icon.png",
                 halloween: "https://icons.iconarchive.com/icons/microsoft/fluentui-emoji-3d/1024/Jack-O-Lantern-3d-icon.png"
             };
 
             if (images[season]) {
-                const imageUrl = images[season];
+                const imageUrl = images[season] + cacheBuster;
+                
                 const favicon = document.getElementById('favicon');
                 const ogImage = document.getElementById('og-image');
                 const twitterImage = document.getElementById('twitter-image');
 
-                if (favicon) favicon.href = imageUrl;
+                if (favicon) {
+                    favicon.href = imageUrl;
+                    document.head.removeChild(favicon);
+                    document.head.appendChild(favicon);
+                }
                 if (ogImage) ogImage.content = imageUrl;
                 if (twitterImage) twitterImage.content = imageUrl;
             }
@@ -715,40 +724,44 @@
         );
 
         const SeasonalTitle = ({ season, className }) => {
-            const baseClassName = className || "text-6xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50 drop-shadow-lg tracking-tight";
+			// We removed the bg-clip-text from the base wrapper so it doesn't hide the image
+			const baseWrapperClass = className ? className.replace(/text-transparent|bg-clip-text|bg-gradient-to-br|from-white|via-white|to-white\/50/g, '').trim() : "text-6xl font-display font-black drop-shadow-lg tracking-tight";
+			
+			// We put the gradient text effect ONLY on the spans
+			const textGradientClass = "text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/50";
 
-            if (season === 'christmas') {
-                return (
-                    <h1 className={`${baseClassName} flex items-center justify-center`}>
-                        <span>IMPOS</span>
-                        <img 
-                            src="https://em-content.zobj.net/source/microsoft-teams/364/christmas-tree_1f384.png" 
-                            alt="T" 
-                            className="inline-block w-[1em] h-[1em] mx-[-0.1em] -mb-[0.0em] drop-shadow-lg"
-                            draggable="false"
-                        />
-                        <span>ER</span>
-                    </h1>
-                );
-            }
+			if (season === 'christmas') {
+				return (
+					<h1 className={`${baseWrapperClass} flex items-center justify-center`}>
+						<span className={textGradientClass}>IMPOS</span>
+						<img 
+							src="https://em-content.zobj.net/source/microsoft-teams/364/christmas-tree_1f384.png" 
+							alt="T" 
+							className="inline-block w-[1em] h-[1em] mx-[-0.1em] -mb-[0.0em] drop-shadow-lg"
+							draggable="false"
+						/>
+						<span className={textGradientClass}>ER</span>
+					</h1>
+				);
+			}
 
-            if (season === 'halloween') {
-                 return (
-                    <h1 className={`${baseClassName} flex items-center justify-center`}>
-                        <span>IMP</span>
-                        <img 
-                            src="https://em-content.zobj.net/source/microsoft-teams/337/jack-o-lantern_1f383.png" 
-                            alt="O" 
-                            className="inline-block w-[1em] h-[1em] mx-[0.0em] mb-[0.05em] drop-shadow-lg"
-                            draggable="false"
-                        />
-                        <span>STER</span>
-                    </h1>
-                );
-            }
+			if (season === 'halloween') {
+				 return (
+					<h1 className={`${baseWrapperClass} flex items-center justify-center`}>
+						<span className={textGradientClass}>IMP</span>
+						<img 
+							src="https://em-content.zobj.net/source/microsoft-teams/337/jack-o-lantern_1f383.png" 
+							alt="O" 
+							className="inline-block w-[1em] h-[1em] mx-[0.0em] mb-[0.05em] drop-shadow-lg"
+							draggable="false"
+						/>
+						<span className={textGradientClass}>STER</span>
+					</h1>
+				);
+			}
 
-            return <h1 className={baseClassName}>IMPOSTER</h1>;
-        };
+			return <h1 className={`${baseWrapperClass} ${textGradientClass}`}>IMPOSTER</h1>;
+		};
 
         const PlayerAvatar = ({ name, className = "" }) => {
             if (!name) return null;
@@ -1640,7 +1653,7 @@
             return (
                  <div className="flex flex-col h-[100dvh] relative z-10">
                     <CategoryInfoModal category={inspectedCategory} onClose={() => setInspectedCategory(null)} />
-                    {showQRCode && <QRCodeModal lobbyId={lobbyId} password={lobbyData.password} onClose={() => setShowQRCode(false)} audioManager={audioManager} />}
+                    {showQRCode && <QRCodeModal lobbyId={lobbyId} password={lobbyData.password} onClose={() => setShowQRCode(false)} audioManager={audioManager} season={season} />}
                     {showConfusionPoll && <ConfusionPollModal onVote={onConfusionVote} />}
                     
                     <div className="absolute top-6 left-6 z-20">
@@ -1895,7 +1908,7 @@
 																className="absolute inset-0 bg-cover bg-center pointer-events-none"
 																style={{
 																	backgroundImage: isChristmas 
-																		? `url("https://www.catholicnewsagency.com/images/three-kings.jpg?jpg")`
+																		? `url("https://i.pinimg.com/736x/d5/fb/7f/d5fb7f4ce4b18b147fa210a5299ea66f.jpg")`
 																		: `url("https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg")`
 																}}
 															></div>
@@ -2795,7 +2808,7 @@
 															className="absolute inset-0 bg-cover bg-center pointer-events-none"
 															style={{
 																backgroundImage: isChristmas 
-																	? `url("https://www.catholicnewsagency.com/images/three-kings.jpg?jpg")`
+																	? `url("https://i.pinimg.com/736x/d5/fb/7f/d5fb7f4ce4b18b147fa210a5299ea66f.jpg")`
 																	: `url("https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg")`
 															}}
 														></div>
@@ -3616,7 +3629,7 @@
                 'https://em-content.zobj.net/source/microsoft-teams/337/face-with-monocle_1f9d0.png',
                 'https://em-content.zobj.net/source/microsoft-teams/337/busts-in-silhouette_1f465.png',
                 'https://em-content.zobj.net/source/microsoft-teams/337/hammer-and-pick_2692-fe0f.png',
-                'https://www.catholicnewsagency.com/images/three-kings.jpg?jpg',
+                'https://i.pinimg.com/736x/d5/fb/7f/d5fb7f4ce4b18b147fa210a5299ea66f.jpg',
                 'https://picjumbo.com/wp-content/uploads/dark-halloween-background-with-glowing-halloween-pumpkins-free-image.jpeg'
             ].forEach(url => imageUrls.add(url));
 
